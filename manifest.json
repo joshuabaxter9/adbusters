@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "AdBusters",
+  "version": "1.0.0",
+  "description": "Who ya gonna call... when ads come back from the dead?",
+  "icons": {
+    "16": "assets/icon16.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  },
+  "permissions": ["declarativeNetRequest", "declarativeNetRequestFeedback", "storage", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "assets/icon48.png"
+  },
+  "options_page": "options.html",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-script.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "base_rules",
+        "enabled": true,
+        "path": "rules/baseRules.json"
+      },
+      {
+        "id": "aggressive_rules",
+        "enabled": false,
+        "path": "rules/aggressiveRules.json"
+      }
+    ]
+  }
+}
