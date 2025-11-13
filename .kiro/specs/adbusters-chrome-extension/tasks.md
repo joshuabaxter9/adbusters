@@ -16,22 +16,24 @@
   - Generate src/rules/aggressiveRules.json with additional blocking rules for aggressive mode
   - _Requirements: 10.1, 10.2, 10.3, 10.4_
 
-- [ ] 3. Implement service worker core functionality
-- [ ] 3.1 Create service worker state management
+- [x] 3. Implement service worker core functionality
+
+- [x] 3.1 Create service worker state management
   - Write src/background/service-worker.ts with ExtensionState interface
   - Implement functions to load and save state to chrome.storage.local
+
   - Create safeStorageGet and safeStorageSet error handling wrappers
   - Initialize default state on extension install
   - _Requirements: 1.3, 2.3, 4.3, 5.1, 6.1_
 
-- [ ] 3.2 Implement declarativeNetRequest rule management
+- [x] 3.2 Implement declarativeNetRequest rule management
   - Write function to register baseRules.json on extension startup
   - Implement toggleBlocking function to enable/disable rules dynamically
   - Implement updateRules function to add/remove aggressive rules for "Cross the Streams" mode
   - Add whitelist checking logic to exclude domains from blocking
   - _Requirements: 1.1, 1.2, 4.1, 4.2, 4.4, 5.2, 5.3, 10.3_
 
-- [ ] 3.3 Implement ghost counter and messaging
+- [x] 3.3 Implement ghost counter and messaging
   - Create incrementGhostCount function that updates storage and badge
   - Implement chrome.action.setBadgeText to display ghost count on icon
   - Set up chrome.runtime.onMessage listener to handle messages from popup and content script
