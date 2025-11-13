@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Emoji to Icon Generator</title>
+  </head>
+  <body>
+    <h1>Generate AdBusters Icons</h1>
+    <p>This will generate PNG icons from an emoji</p>
+    <canvas id="canvas" style="border: 1px solid black"></canvas>
+    <br /><br />
+    <button onclick="generateIcons()">Generate Icons</button>
+    <div id="downloads"></div>
+
+    <script>
+      function generateIcon(size, emoji) {
+        const canvas = document.getElementById('canvas')
+        canvas.width = size
+        canvas.height = size
+        const ctx = canvas.getContext('2d')
+
+        // Dark background
+        ctx.fillStyle = '#1a1a1a'
+        ctx.fillRect(0, 0, size, size)
+
+        // Emoji
+        ctx.font = `${size * 0.7}px Arial`
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(emoji, size / 2, size / 2)
+
+        return canvas.toDataURL('image/png')
+      }
+
+      function generateIcons() {
+        const sizes = [16, 48, 128]
+        const emoji = '👻'
+        const downloads = document.getElementById('downloads')
+        downloads.innerHTML = '<h2>Right-click and "Save As" each icon:</h2>'
+
+        sizes.forEach((size) => {
+          const dataUrl = generateIcon(size, emoji)
+          const link = document.createElement('a')
+          link.href = dataUrl
+          link.download = `icon${size}.png`
+          link.textContent = `Download icon${size}.png`
+          link.style.display = 'block'
+          link.style.margin = '10px'
+
+          const img = document.createElement('img')
+          img.src = dataUrl
+          img.style.border = '1px solid black'
+          img.style.marginLeft = '10px'
+
+          const div = document.createElement('div')
+          div.appendChild(link)
+          div.appendChild(img)
+          downloads.appendChild(div)
+        })
+      }
+    </script>
+  </body>
+</html>

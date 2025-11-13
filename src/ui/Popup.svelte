@@ -70,11 +70,14 @@
   async function toggleAggressive() {
     try {
       error = ''
+      console.log('Toggling aggressive mode to:', aggressiveMode)
 
       const response = await chrome.runtime.sendMessage({
         type: 'TOGGLE_AGGRESSIVE',
         enabled: aggressiveMode,
       })
+
+      console.log('Aggressive mode response:', response)
 
       if (!response?.success) {
         error = 'Failed to toggle aggressive mode'
@@ -84,6 +87,7 @@
     } catch (err) {
       console.error('Error toggling aggressive mode:', err)
       error = 'Connection error'
+      // Revert checkbox
       aggressiveMode = !aggressiveMode
     }
   }

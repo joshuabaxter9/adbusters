@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { resolve } from 'path'
-import { copyFileSync, mkdirSync, existsSync } from 'fs'
+import { copyFileSync, mkdirSync, existsSync, writeFileSync } from 'fs'
 
 // Plugin to copy manifest and static assets
 function copyAssets() {
@@ -16,16 +16,52 @@ function copyAssets() {
       // Copy manifest.json
       copyFileSync('manifest.json', 'dist/manifest.json')
 
+      // Generate HTML files
+      const popupHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdBusters</title>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="/popup.js"></script>
+</body>
+</html>`
+
+      const optionsHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdBusters Settings</title>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="/options.js"></script>
+</body>
+</html>`
+
+      writeFileSync('dist/popup.html', popupHtml)
+      writeFileSync('dist/options.html', optionsHtml)
+
       // Copy icons if they exist (from public or src/assets/icons)
-      const icons = ['icon16.png', 'icon48.png', 'icon128.png']
-      icons.forEach((icon) => {
-        const publicPath = `public/${icon}`
-        const assetsPath = `src/assets/icons/${icon}`
-        if (existsSync(publicPath)) {
-          copyFileSync(publicPath, `dist/assets/${icon}`)
-        } else if (existsSync(assetsPath)) {
-          copyFileSync(assetsPath, `dist/assets/${icon}`)
-        }
+      const iconFormats = ['png', 'svg']
+      const iconSizes = [16, 48, 128]
+
+      iconSizes.forEach((size) => {
+        iconFormats.forEach((format) => {
+          const icon = `icon${size}.${format}`
+          const publicPath = `public/${icon}`
+          const assetsPath = `src/assets/icons/${icon}`
+          if (existsSync(publicPath)) {
+            // Copy to root for manifest
+            copyFileSync(publicPath, `dist/${icon}`)
+          } else if (existsSync(assetsPath)) {
+            copyFileSync(assetsPath, `dist/${icon}`)
+          }
+        })
       })
 
       // Copy rules
@@ -64,8 +100,8 @@ export default defineConfig({
       input: {
         'service-worker': resolve(__dirname, 'src/background/service-worker.ts'),
         'content-script': resolve(__dirname, 'src/content/content-script.ts'),
-        popup: resolve(__dirname, 'public/popup.html'),
-        options: resolve(__dirname, 'public/options.html'),
+        popup: resolve(__dirname, 'src/ui/popup.ts'),
+        options: resolve(__dirname, 'src/ui/options.ts'),
       },
       output: {
         entryFileNames: (chunkInfo) => {
@@ -75,17 +111,16 @@ export default defineConfig({
           if (chunkInfo.name === 'content-script') {
             return 'content-script.js'
           }
+          if (chunkInfo.name === 'popup') {
+            return 'popup.js'
+          }
+          if (chunkInfo.name === 'options') {
+            return 'options.js'
+          }
           return 'assets/[name]-[hash].js'
         },
         chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: (assetInfo) => {
-          // Keep HTML files at root
-          if (assetInfo.name?.endsWith('.html')) {
-            return '[name][extname]'
-          }
-          // Keep CSS in assets
-          return 'assets/[name]-[hash][extname]'
-        },
+        assetFileNames: 'assets/[name]-[hash][extname]',
       },
     },
   },
