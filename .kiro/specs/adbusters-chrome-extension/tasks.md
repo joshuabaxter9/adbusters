@@ -40,22 +40,23 @@
   - Implement getState message handler to return current extension state
   - _Requirements: 2.1, 2.3_
 
-- [ ] 4. Implement content script for ad hiding and ghost injection
-- [ ] 4.1 Create ad detection and hiding logic
+- [x] 4. Implement content script for ad hiding and ghost injection
+
+- [x] 4.1 Create ad detection and hiding logic
   - Write src/content/content-script.ts with ad element selectors array
   - Implement scanForAds function using querySelectorAll with common ad selectors
   - Create applyBlockingCSS function to inject CSS that hides ad elements
   - Add error handling for invalid selectors
   - _Requirements: 3.1, 3.2, 3.4_
 
-- [ ] 4.2 Implement ghost graphic injection
+- [x] 4.2 Implement ghost graphic injection
   - Create SVG template for ghost graphic with spooky styling
   - Implement injectGhostGraphic function to replace hidden ad elements with ghost SVG
   - Ensure injected graphics maintain page layout (use same dimensions as original element)
   - Send message to service worker when ads are detected and hidden
   - _Requirements: 3.3, 3.4_
 
-- [ ] 4.3 Set up DOM observation for dynamic content
+- [x] 4.3 Set up DOM observation for dynamic content
   - Implement MutationObserver to detect dynamically loaded ads
   - Call scanForAds when new nodes are added to the DOM
   - Debounce scanning to avoid performance issues
