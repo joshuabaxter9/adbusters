@@ -8,37 +8,45 @@ console.log('👻 AdBusters content script loaded on:', window.location.hostname
 // ============================================================================
 
 const AD_SELECTORS = [
-  // Generic ad classes and IDs
-  '[id*="ad-"]',
-  '[id*="ads-"]',
-  '[id*="banner"]',
-  '[class*="ad-"]',
-  '[class*="ads-"]',
-  '[class*="banner"]',
+  // Specific ad classes and IDs (more precise)
   '.advertisement',
   '.ad-container',
   '.ad-wrapper',
-  '#sponsored-content',
-  '[class*="sponsored"]',
+  '.ad-banner',
+  '.ad-slot',
+  '.ad-unit',
+  '#advertisement',
+  '#ad-container',
 
-  // Common ad iframes
-  'iframe[src*="doubleclick"]',
-  'iframe[src*="googlesyndication"]',
-  'iframe[src*="googleadservices"]',
-  'iframe[src*="advertising"]',
-  'iframe[src*="adnxs"]',
+  // Sponsored content
+  '.sponsored-content',
+  '.sponsored-post',
+  '[data-sponsored="true"]',
 
-  // Specific ad networks
+  // Common ad iframes (very specific)
+  'iframe[src*="doubleclick.net"]',
+  'iframe[src*="googlesyndication.com"]',
+  'iframe[src*="googleadservices.com"]',
+  'iframe[src*="advertising.com"]',
+  'iframe[src*="adnxs.com"]',
+
+  // Google AdSense (very specific)
   'ins.adsbygoogle',
   '.adsbygoogle',
   '[data-ad-slot]',
   '[data-ad-client]',
 
-  // Taboola, Outbrain
-  '[class*="taboola"]',
-  '[class*="outbrain"]',
-  '[id*="taboola"]',
-  '[id*="outbrain"]',
+  // Taboola, Outbrain (specific)
+  '.taboola-container',
+  '.outbrain-container',
+  '[id^="taboola-"]',
+  '[id^="outbrain-"]',
+
+  // Other ad networks
+  '[class^="ad_"]',
+  '[id^="ad_"]',
+  '[class^="ads_"]',
+  '[id^="ads_"]',
 ]
 
 // ============================================================================
@@ -114,6 +122,49 @@ function safeQuerySelector(selector: string): HTMLElement[] {
   }
 }
 
+function isLikelyAd(element: HTMLElement): boolean {
+  // Don't block if element contains important content indicators
+  const text = element.textContent?.toLowerCase() || ''
+  const className = element.className?.toLowerCase() || ''
+  const id = element.id?.toLowerCase() || ''
+
+  // Skip if it's likely legitimate content
+  const legitimatePatterns = [
+    'article',
+    'content',
+    'main',
+    'story',
+    'post',
+    'comment',
+    'navigation',
+    'nav',
+    'menu',
+    'header',
+    'footer',
+    'sidebar',
+  ]
+
+  for (const pattern of legitimatePatterns) {
+    if (className.includes(pattern) || id.includes(pattern)) {
+      // Unless it's explicitly marked as an ad
+      if (
+        !className.includes('advertisement') &&
+        !className.includes('ad-container') &&
+        !id.includes('advertisement')
+      ) {
+        return false
+      }
+    }
+  }
+
+  // Check if element has substantial text content (likely not an ad)
+  if (text.length > 200 && !element.querySelector('iframe')) {
+    return false
+  }
+
+  return true
+}
+
 function createGhostSVG(): string {
   return `
     <svg viewBox="0 0 100 100" style="width: 80px; height: 80px; opacity: 0.6;">
@@ -179,8 +230,14 @@ function scanForAds(): number {
         return
       }
 
-      // Mark as processed
+      // Mark as processed first to avoid reprocessing
       element.setAttribute('data-adbusters-processed', 'true')
+
+      // Check if it's actually an ad
+      if (!isLikelyAd(element)) {
+        console.log('⚠️ Skipping (likely legitimate content):', selector)
+        return
+      }
 
       // Inject ghost graphic
       injectGhostGraphic(element)
