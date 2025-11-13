@@ -62,29 +62,30 @@
   - Debounce scanning to avoid performance issues
   - _Requirements: 3.1, 3.4_
 
-- [ ] 5. Build popup UI with Svelte
-- [ ] 5.1 Create popup component structure
+- [x] 5. Build popup UI with Svelte
+
+- [x] 5.1 Create popup component structure
   - Write src/ui/popup.svelte with component script and template
   - Create public/popup.html that loads the compiled Svelte component
   - Implement onMount to load extension state from service worker
   - Set up reactive variables for blockingEnabled, ghostCount, aggressiveMode
   - _Requirements: 1.4, 2.2, 4.3, 7.1, 7.2_
 
-- [ ] 5.2 Implement toggle controls and state updates
+- [x] 5.2 Implement toggle controls and state updates
   - Create toggleBlocking function that sends message to service worker
   - Implement toggleAggressive function for "Cross the Streams" mode
   - Add visual feedback for toggle states (button color changes, glow effects)
   - Display warning message when aggressive mode is enabled
   - _Requirements: 1.1, 4.1, 4.3, 7.2_
 
-- [ ] 5.3 Create ghost counter and PKE meter displays
+- [x] 5.3 Create ghost counter and PKE meter displays
   - Implement ghost counter display with emoji and count value
   - Create PKEMeter Svelte component with animated progress bar
   - Calculate PKE level based on ghost count (e.g., level = min(ghostCount / 10, 100))
   - Apply Tailwind classes for spooky theme styling (glows, colors, animations)
   - _Requirements: 2.2, 7.1, 7.2, 7.4_
 
-- [ ] 5.4 Apply spooky theme styling
+- [x] 5.4 Apply spooky theme styling
   - Use Tailwind custom theme colors throughout popup
   - Add glow effects to active elements using CSS box-shadow
   - Implement pulse animation for PKE meter
