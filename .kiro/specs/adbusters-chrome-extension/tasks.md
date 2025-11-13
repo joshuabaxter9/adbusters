@@ -97,75 +97,54 @@
   - Write src/ui/options.svelte with settings sections
   - Create public/options.html that loads the compiled Svelte component
   - Implement onMount to load current settings from storage
-  - Set up reactive variables for soundEnabled and whitelist array
+  - Set up reactive variables for whitelist array
   - _Requirements: 5.4, 6.4_
 
-- [ ] 6.2 Implement sound toggle functionality
-  - Create checkbox input bound to soundEnabled variable
-  - Implement toggleSound function that updates chrome.storage.local
-  - Send message to service worker to update sound preference
-  - _Requirements: 6.1, 6.2, 6.4_
-
-- [ ] 6.3 Implement whitelist management
+- [ ] 6.2 Implement whitelist management
   - Create input field and button for adding domains
   - Implement addDomain function that validates and adds domain to whitelist array
   - Create list display with remove buttons for each whitelisted domain
   - Implement removeDomain function that updates storage and service worker
   - _Requirements: 5.1, 5.3, 5.4_
 
-- [ ] 6.4 Add refresh ghost data button
+- [ ] 6.3 Add refresh ghost data button
   - Create button that triggers filter list refresh
   - Implement refreshData function that calls fetch-lists tool
   - Display success/error message after refresh
   - _Requirements: 10.4_
 
-- [ ] 7. Implement sound effects system
-- [ ] 7.1 Add trap sound asset
-  - Find or create short "trap" sound effect (< 1 second, .mp3 or .ogg)
-  - Add sound file to src/assets/sounds/trap.mp3
-  - Update manifest.json to include sound file in web_accessible_resources
-  - _Requirements: 2.4, 6.2_
-
-- [ ] 7.2 Implement sound playback in content script
-  - Create playTrapSound function in content script
-  - Check soundEnabled preference before playing
-  - Play sound only on first ad blocked per tab (use flag to track)
-  - Handle audio playback errors gracefully
-  - _Requirements: 2.4, 6.2, 6.3_
-
-- [ ] 8. Create extension icons and visual assets
+- [x] 7. Create extension icons and visual assets
   - Design or source 16x16, 48x48, and 128x128 PNG icons with ghost/trap theme
   - Add icons to public/ directory
   - Create ghost SVG graphic for ad replacement
-  - Add trap SVG graphic as alternative visual
   - _Requirements: 7.2, 7.3_
 
-- [ ] 9. Implement icon badge and glow effect
+- [x] 8. Implement icon badge and glow effect
   - Update service worker to set badge text with ghost count
   - Set badge background color to neon green
-  - Implement icon glow effect when blocking is active (use canvas API or separate icon)
-  - Update icon appearance when blocking is toggled off
+  - Icon displays custom ghost graphic
+  - Badge updates when ads are blocked
   - _Requirements: 7.3_
 
-- [ ] 10. Wire up all components and test integration
+- [ ] 9. Wire up all components and test integration
   - Verify message passing between service worker, content script, and popup
   - Test blocking toggle updates rules correctly
   - Test ghost count increments and displays in popup
   - Test whitelist prevents blocking on specified domains
   - Test aggressive mode adds additional rules
-  - Test sound plays when ads are blocked (if enabled)
   - Test ghost graphics appear on blocked ad elements
-  - _Requirements: 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4, 5.1, 5.2, 5.3, 6.1, 6.2, 6.3_
+  - Verify ad detection is not too aggressive (doesn't block legitimate content)
+  - _Requirements: 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4, 5.1, 5.2, 5.3_
 
-- [ ] 11. Set up development workflow scripts
+- [x] 10. Set up development workflow scripts
   - Add npm scripts for dev, build, and lint commands
   - Configure Vite to output to dist/ directory
   - Set up file watching for automatic rebuilds
   - Create README with setup and loading instructions
   - _Requirements: 9.1, 9.2, 9.3, 9.4_
 
-- [ ]\* 12. Add easter egg and polish
-  - Implement "Don't cross the streams!" warning message when aggressive mode is enabled
+- [ ]\* 11. Add easter egg and polish
+  - Implement "Don't cross the streams!" warning message when aggressive mode is enabled (already done!)
   - Add subtle animations to popup elements
   - Implement spectral mode color theme variant (optional)
   - Add loading animation (ecto-core) for initial state load
