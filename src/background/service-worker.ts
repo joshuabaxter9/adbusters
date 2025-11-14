@@ -14,6 +14,8 @@ interface ExtensionState {
   soundEnabled: boolean
   whitelist: string[]
   lastUpdated: number
+  pkeCapacity: number
+  purgeCount: number
 }
 
 type Message =
@@ -23,6 +25,7 @@ type Message =
   | { type: 'INCREMENT_GHOST_COUNT'; count: number }
   | { type: 'UPDATE_WHITELIST'; whitelist: string[] }
   | { type: 'TOGGLE_SOUND'; enabled: boolean }
+  | { type: 'PURGE_GHOSTS'; capacity: number; purgeCount: number }
 
 interface MessageResponse {
   success: boolean
@@ -41,6 +44,8 @@ const DEFAULT_STATE: ExtensionState = {
   soundEnabled: true,
   whitelist: [],
   lastUpdated: Date.now(),
+  pkeCapacity: 1000,
+  purgeCount: 0,
 }
 
 // ============================================================================
@@ -287,6 +292,21 @@ chrome.runtime.onMessage.addListener(
           case 'TOGGLE_SOUND': {
             const success = await toggleSound(message.enabled)
             sendResponse({ success, data: { enabled: message.enabled } })
+            break
+          }
+
+          case 'PURGE_GHOSTS': {
+            const state = await getState()
+            state.ghostCount = 0
+            state.pkeCapacity = message.capacity
+            state.purgeCount = message.purgeCount
+            await saveState(state)
+            await updateBadge(0)
+            console.log(`👻 Ghosts purged! New capacity: ${message.capacity}`)
+            sendResponse({
+              success: true,
+              data: { capacity: message.capacity, purgeCount: message.purgeCount },
+            })
             break
           }
 

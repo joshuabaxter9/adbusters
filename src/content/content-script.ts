@@ -77,29 +77,72 @@ function applyBlockingCSS(): void {
       /* Don't completely hide - we'll replace with ghosts */
     }
     
-    /* AdBusters ghost container */
-    .adbusters-ghost-container {
+    /* AdBusters portal container */
+    .adbusters-portal-container {
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(26, 26, 26, 0.05);
-      border: 2px dashed #39FF14;
-      border-radius: 8px;
-      min-height: 100px;
+      background: rgba(26, 26, 26, 0.95);
+      border-radius: 4px;
       position: relative;
       overflow: hidden;
+      box-sizing: border-box;
     }
     
-    .adbusters-ghost-container::before {
-      content: '👻';
-      font-size: 48px;
-      opacity: 0.3;
-      animation: adbusters-float 3s ease-in-out infinite;
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
     }
     
-    @keyframes adbusters-float {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-10px); }
+    @keyframes suckIntoPortal {
+      0% {
+        opacity: 1;
+        transform: scale(1) translateY(0) rotate(0deg);
+        filter: blur(0px);
+      }
+      15% {
+        opacity: 1;
+        transform: scale(0.95) translateY(-8px) rotate(-5deg);
+        filter: blur(0px);
+      }
+      30% {
+        opacity: 1;
+        transform: scale(0.85) translateY(-3px) rotate(-15deg);
+        filter: blur(0.5px);
+      }
+      50% {
+        opacity: 0.9;
+        transform: scale(0.7) translateY(0) rotate(-30deg);
+        filter: blur(1px);
+      }
+      70% {
+        opacity: 0.7;
+        transform: scale(0.45) translateY(0) rotate(-50deg);
+        filter: blur(1.5px);
+      }
+      85% {
+        opacity: 0.4;
+        transform: scale(0.2) translateY(0) rotate(-70deg);
+        filter: blur(2px);
+      }
+      95% {
+        opacity: 0.1;
+        transform: scale(0.05) translateY(0) rotate(-85deg);
+        filter: blur(2.5px);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(0) translateY(0) rotate(-90deg);
+        filter: blur(3px);
+      }
+    }
+    
+    .portal-vortex {
+      filter: drop-shadow(0 0 10px rgba(57, 255, 20, 0.6));
+    }
+    
+    .ghost-capture {
+      filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.8));
     }
   `
 
@@ -182,39 +225,102 @@ function createGhostSVG(): string {
 
 function injectGhostGraphic(element: HTMLElement): void {
   try {
-    // Store original dimensions
-    const rect = element.getBoundingClientRect()
-    const width = rect.width || element.offsetWidth
-    const height = rect.height || element.offsetHeight
+    // 20% chance to show portal animation, 80% just hide
+    const showPortal = Math.random() < 0.2
 
-    // Only inject ghost if element has meaningful size
-    if (width > 50 && height > 50) {
-      // Create ghost container
-      const ghostContainer = document.createElement('div')
-      ghostContainer.className = 'adbusters-ghost-container'
-      ghostContainer.style.width = `${width}px`
-      ghostContainer.style.height = `${height}px`
-      ghostContainer.innerHTML = `
-        <div style="text-align: center;">
-          ${createGhostSVG()}
-          <div style="color: #39FF14; font-size: 12px; margin-top: 8px; font-family: monospace;">
-            👻 Ghost Trapped
+    if (showPortal) {
+      // Store original dimensions and position
+      const rect = element.getBoundingClientRect()
+      const computedStyle = window.getComputedStyle(element)
+      const width = rect.width || element.offsetWidth
+      const height = rect.height || element.offsetHeight
+
+      // Only show portal if element has meaningful size
+      if (width > 50 && height > 50) {
+        // Preserve the element's display and layout properties
+        const originalDisplay = computedStyle.display
+        const originalPosition = computedStyle.position
+
+        // Create portal container that fits exactly in the ad space
+        const portalContainer = document.createElement('div')
+        portalContainer.className = 'adbusters-portal-container'
+
+        // Match exact dimensions and preserve layout
+        portalContainer.style.width = `${width}px`
+        portalContainer.style.height = `${height}px`
+        portalContainer.style.minHeight = `${height}px`
+        portalContainer.style.maxHeight = `${height}px`
+        portalContainer.style.display = originalDisplay === 'none' ? 'block' : originalDisplay
+        portalContainer.style.position =
+          originalPosition === 'static' ? 'relative' : originalPosition
+        portalContainer.style.overflow = 'hidden'
+
+        // Scale portal size based on container size
+        const portalSize = Math.min(width, height) * 0.6
+        const ghostSize = portalSize * 0.6
+
+        portalContainer.innerHTML = `
+          <div style="
+            text-align: center; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100%; 
+            width: 100%;
+            position: relative;
+          ">
+            <div class="portal-vortex" style="
+              font-size: ${portalSize}px; 
+              animation: spin 2s linear infinite;
+              line-height: 1;
+            ">🌀</div>
+            <div class="ghost-capture" style="
+              position: absolute; 
+              font-size: ${ghostSize}px; 
+              animation: suckIntoPortal 5s ease-in forwards;
+              line-height: 1;
+            ">👻</div>
           </div>
-        </div>
-      `
+        `
 
-      // Replace element content with ghost
-      element.innerHTML = ''
-      element.appendChild(ghostContainer)
-      element.setAttribute('data-adbusters-ghosted', 'true')
+        // Replace element content with portal while maintaining layout
+        element.innerHTML = ''
+        element.style.overflow = 'hidden'
+        element.appendChild(portalContainer)
+        element.setAttribute('data-adbusters-portal', 'true')
+
+        // After animation completes, hide the entire element
+        setTimeout(() => {
+          element.style.transition = 'opacity 0.5s ease-out'
+          element.style.opacity = '0'
+          setTimeout(() => {
+            element.style.display = 'none'
+            element.style.height = '0'
+            element.style.width = '0'
+            element.style.margin = '0'
+            element.style.padding = '0'
+          }, 500)
+        }, 5000)
+      } else {
+        // Small elements just hide
+        element.style.display = 'none'
+      }
     } else {
-      // For small elements, just hide them
+      // 80% of the time: just hide the ad completely
+      // Remove from layout entirely so page flows naturally
       element.style.display = 'none'
+      element.style.visibility = 'hidden'
+      element.style.opacity = '0'
+      element.style.height = '0'
+      element.style.width = '0'
+      element.style.margin = '0'
+      element.style.padding = '0'
+      element.setAttribute('data-adbusters-hidden', 'true')
     }
   } catch (error) {
-    console.warn('Failed to inject ghost graphic:', error)
+    console.warn('Failed to process ad element:', error)
     // Fallback: just hide the element
-    element.style.visibility = 'hidden'
+    element.style.display = 'none'
   }
 }
 

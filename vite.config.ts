@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { resolve } from 'path'
-import { copyFileSync, mkdirSync, existsSync, writeFileSync } from 'fs'
+import { copyFileSync, mkdirSync, existsSync, writeFileSync, readdirSync } from 'fs'
 
 // Plugin to copy manifest and static assets
 function copyAssets() {
@@ -17,12 +17,27 @@ function copyAssets() {
       copyFileSync('manifest.json', 'dist/manifest.json')
 
       // Generate HTML files
+      // Find the generated CSS file
+      const assetsDir = 'dist/assets'
+      let popupCss = ''
+      let stylesCss = ''
+
+      if (existsSync(assetsDir)) {
+        const files = readdirSync(assetsDir)
+        const popupCssFile = files.find((f) => f.startsWith('popup-') && f.endsWith('.css'))
+        const stylesCssFile = files.find((f) => f.startsWith('styles-') && f.endsWith('.css'))
+        if (popupCssFile) popupCss = `/assets/${popupCssFile}`
+        if (stylesCssFile) stylesCss = `/assets/${stylesCssFile}`
+      }
+
       const popupHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AdBusters</title>
+  ${stylesCss ? `<link rel="stylesheet" href="${stylesCss}">` : ''}
+  ${popupCss ? `<link rel="stylesheet" href="${popupCss}">` : ''}
 </head>
 <body>
   <div id="app"></div>
@@ -36,6 +51,7 @@ function copyAssets() {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AdBusters Settings</title>
+  ${stylesCss ? `<link rel="stylesheet" href="${stylesCss}">` : ''}
 </head>
 <body>
   <div id="app"></div>
