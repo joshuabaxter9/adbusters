@@ -133,6 +133,48 @@
       error = 'Connection error'
     }
   }
+
+  async function toggleWhitelist() {
+    try {
+      error = ''
+
+      // Get current state
+      const stateResponse = await chrome.runtime.sendMessage({ type: 'GET_STATE' })
+      if (!stateResponse?.success) {
+        error = 'Failed to get whitelist'
+        return
+      }
+
+      let whitelist = stateResponse.data.whitelist || []
+
+      if (isWhitelisted) {
+        // Remove from whitelist
+        whitelist = whitelist.filter((domain: string) => domain !== currentDomain)
+      } else {
+        // Add to whitelist
+        whitelist.push(currentDomain)
+      }
+
+      const response = await chrome.runtime.sendMessage({
+        type: 'UPDATE_WHITELIST',
+        whitelist: whitelist,
+      })
+
+      if (response?.success) {
+        isWhitelisted = !isWhitelisted
+        // Reload the current tab to apply changes
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+        if (tab?.id) {
+          await chrome.tabs.reload(tab.id)
+        }
+      } else {
+        error = 'Failed to update whitelist'
+      }
+    } catch (err) {
+      console.error('Error toggling whitelist:', err)
+      error = 'Connection error'
+    }
+  }
 </script>
 
 <div class="popup-container">

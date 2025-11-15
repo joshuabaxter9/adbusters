@@ -83,10 +83,24 @@ function applyBlockingCSS(): void {
       align-items: center;
       justify-content: center;
       background: rgba(26, 26, 26, 0.95);
-      border-radius: 4px;
+      border-radius: 12px !important;
       position: relative;
-      overflow: hidden;
+      overflow: hidden !important;
       box-sizing: border-box;
+      transform: translateZ(0);
+      isolation: isolate;
+      contain: paint;
+    }
+    
+    .adbusters-portal-container::before,
+    .adbusters-portal-container::after {
+      content: none !important;
+    }
+    
+    .adbusters-portal-container > * {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 12px;
     }
     
     /* Portal Animation Keyframes */
@@ -346,8 +360,8 @@ function createGhostSVG(): string {
 
 function injectGhostGraphic(element: HTMLElement): boolean {
   try {
-    // 20% chance to show interactive ghost, 80% just hide
-    const showInteractiveGhost = Math.random() < 0.2
+    // 50% chance to show interactive ghost, 50% just hide
+    const showInteractiveGhost = Math.random() < 0.5
 
     if (showInteractiveGhost) {
       // Store original dimensions and position
@@ -356,8 +370,8 @@ function injectGhostGraphic(element: HTMLElement): boolean {
       const width = rect.width || element.offsetWidth
       const height = rect.height || element.offsetHeight
 
-      // Only show portal if element has meaningful size
-      if (width > 50 && height > 50) {
+      // Only show portal if element is large enough (increased from 50x50 to 150x150)
+      if (width > 150 && height > 150) {
         // Preserve the element's display and layout properties
         const originalDisplay = computedStyle.display
         const originalPosition = computedStyle.position
@@ -375,10 +389,15 @@ function injectGhostGraphic(element: HTMLElement): boolean {
         portalContainer.style.position =
           originalPosition === 'static' ? 'relative' : originalPosition
         portalContainer.style.overflow = 'hidden'
+        portalContainer.style.setProperty('border-radius', '12px', 'important')
+        portalContainer.style.setProperty('overflow', 'hidden', 'important')
+        portalContainer.style.setProperty('clip-path', 'inset(0 round 12px)', 'important')
+        portalContainer.style.setProperty('transform', 'translateZ(0)', 'important') // Force GPU rendering
+        portalContainer.style.setProperty('isolation', 'isolate', 'important') // Create stacking context
 
-        // Scale portal size based on container size
-        const portalSize = Math.min(width, height) * 0.6
-        const ghostSize = portalSize * 0.6
+        // Scale portal size based on container size (increased from 0.6 to 0.9)
+        const portalSize = Math.min(width, height) * 0.9
+        const ghostSize = portalSize * 0.5
 
         // Generate twinkling stars
         let starsHTML = ''
@@ -409,6 +428,8 @@ function injectGhostGraphic(element: HTMLElement): boolean {
             height: 100%; 
             width: 100%;
             position: relative;
+            border-radius: 12px;
+            overflow: hidden;
           ">
             <!-- Twinkling stars background -->
             ${starsHTML}
@@ -443,10 +464,28 @@ function injectGhostGraphic(element: HTMLElement): boolean {
           </div>
         `
 
-        // Replace element content with portal while maintaining layout
+        // Create a wrapper with absolute positioning to ensure rounded corners
+        const wrapper = document.createElement('div')
+        wrapper.style.cssText = `
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          border-radius: 12px !important;
+          overflow: hidden !important;
+          z-index: 1 !important;
+        `
+        wrapper.appendChild(portalContainer)
+
+        // Replace element content with wrapper
         element.innerHTML = ''
+        element.style.position = 'relative'
         element.style.overflow = 'hidden'
-        element.appendChild(portalContainer)
+        element.style.borderRadius = '12px'
+        element.appendChild(wrapper)
         element.setAttribute('data-adbusters-portal', 'true')
         element.setAttribute('data-adbusters-interactive', 'true')
 
@@ -590,7 +629,10 @@ function reportAdsDetected(count: number): void {
       }
     )
   } catch (error) {
-    console.warn('Failed to send message to service worker:', error)
+    // Silently ignore extension context invalidated errors (happens on extension reload)
+    if (error instanceof Error && !error.message.includes('Extension context invalidated')) {
+      console.warn('Failed to send message to service worker:', error)
+    }
   }
 }
 
