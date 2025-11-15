@@ -89,61 +89,182 @@ function applyBlockingCSS(): void {
       box-sizing: border-box;
     }
     
+    /* Portal Animation Keyframes */
     @keyframes spin {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
+    }
+    
+    @keyframes spinReverse {
+      from { transform: rotate(360deg); }
+      to { transform: rotate(0deg); }
+    }
+    
+    @keyframes spinSlow {
+      from { transform: rotate(0deg) scale(1); }
+      to { transform: rotate(360deg) scale(1.05); }
+    }
+    
+    @keyframes portalPulse {
+      0%, 100% { 
+        transform: scale(1);
+        opacity: 0.8;
+      }
+      50% { 
+        transform: scale(1.1);
+        opacity: 1;
+      }
     }
     
     @keyframes suckIntoPortal {
       0% {
         opacity: 1;
         transform: scale(1) translateY(0) rotate(0deg);
-        filter: blur(0px);
+        filter: blur(0px) brightness(1);
       }
       15% {
         opacity: 1;
         transform: scale(0.95) translateY(-8px) rotate(-5deg);
-        filter: blur(0px);
+        filter: blur(0px) brightness(1.1);
       }
       30% {
         opacity: 1;
         transform: scale(0.85) translateY(-3px) rotate(-15deg);
-        filter: blur(0.5px);
+        filter: blur(0.5px) brightness(1.2);
       }
       50% {
         opacity: 0.9;
         transform: scale(0.7) translateY(0) rotate(-30deg);
-        filter: blur(1px);
+        filter: blur(1px) brightness(1.3);
       }
       70% {
         opacity: 0.7;
         transform: scale(0.45) translateY(0) rotate(-50deg);
-        filter: blur(1.5px);
+        filter: blur(1.5px) brightness(1.4);
       }
       85% {
         opacity: 0.4;
         transform: scale(0.2) translateY(0) rotate(-70deg);
-        filter: blur(2px);
+        filter: blur(2px) brightness(1.5);
       }
       95% {
         opacity: 0.1;
         transform: scale(0.05) translateY(0) rotate(-85deg);
-        filter: blur(2.5px);
+        filter: blur(2.5px) brightness(1.6);
       }
       100% {
         opacity: 0;
         transform: scale(0) translateY(0) rotate(-90deg);
-        filter: blur(3px);
+        filter: blur(3px) brightness(2);
       }
     }
     
-    .portal-vortex {
-      filter: drop-shadow(0 0 10px rgba(57, 255, 20, 0.6));
+    @keyframes twinkle {
+      0%, 100% {
+        opacity: 0.3;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.2);
+      }
+    }
+    
+    @keyframes twinkleSlow {
+      0%, 100% {
+        opacity: 0.2;
+        transform: scale(0.8);
+      }
+      50% {
+        opacity: 0.9;
+        transform: scale(1.3);
+      }
+    }
+    
+    @keyframes twinkleFast {
+      0%, 100% {
+        opacity: 0.4;
+        transform: scale(1.1);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.4);
+      }
+    }
+    
+    .star-dot {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: 0 0 3px rgba(255, 255, 255, 0.8);
+      pointer-events: none;
+    }
+    
+    .star-dot.small {
+      width: 1.5px;
+      height: 1.5px;
+      animation: twinkleSlow 3s ease-in-out infinite;
+    }
+    
+    .star-dot.medium {
+      width: 2px;
+      height: 2px;
+      animation: twinkle 2s ease-in-out infinite;
+    }
+    
+    .star-dot.large {
+      width: 2.5px;
+      height: 2.5px;
+      animation: twinkleFast 1.5s ease-in-out infinite;
+      box-shadow: 0 0 4px rgba(255, 255, 255, 1);
+    }
+    
+    /* Portal Layers - Simplified */
+    .portal-layer-1 {
+      position: absolute;
+      animation: spin 4s linear infinite;
+      filter: drop-shadow(0 0 15px rgba(186, 85, 211, 0.6));
+    }
+    
+    .portal-layer-2 {
+      position: absolute;
+      animation: spinReverse 5s linear infinite;
+      filter: drop-shadow(0 0 12px rgba(138, 43, 226, 0.5));
+    }
+    
+    .portal-layer-3 {
+      position: absolute;
+      animation: spin 6s linear infinite;
+      filter: drop-shadow(0 0 10px rgba(147, 112, 219, 0.4));
+    }
+    
+    .portal-core {
+      position: absolute;
+      animation: portalPulse 2s ease-in-out infinite;
+      filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.9));
     }
     
     .ghost-capture {
-      filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.8));
+      position: absolute;
+      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9));
+      z-index: 10;
+      cursor: pointer;
+      transition: transform 0.2s ease;
     }
+    
+    .ghost-capture:hover {
+      transform: scale(1.1);
+      filter: drop-shadow(0 0 12px rgba(255, 255, 255, 1));
+    }
+    
+    .ghost-capture.capturing {
+      animation: suckIntoPortal 4s ease-in forwards;
+      cursor: default;
+    }
+    
+
   `
 
   if (!document.getElementById('adbusters-blocking-css')) {
@@ -223,12 +344,12 @@ function createGhostSVG(): string {
   `
 }
 
-function injectGhostGraphic(element: HTMLElement): void {
+function injectGhostGraphic(element: HTMLElement): boolean {
   try {
-    // 20% chance to show portal animation, 80% just hide
-    const showPortal = Math.random() < 0.2
+    // 20% chance to show interactive ghost, 80% just hide
+    const showInteractiveGhost = Math.random() < 0.2
 
-    if (showPortal) {
+    if (showInteractiveGhost) {
       // Store original dimensions and position
       const rect = element.getBoundingClientRect()
       const computedStyle = window.getComputedStyle(element)
@@ -259,6 +380,26 @@ function injectGhostGraphic(element: HTMLElement): void {
         const portalSize = Math.min(width, height) * 0.6
         const ghostSize = portalSize * 0.6
 
+        // Generate twinkling stars
+        let starsHTML = ''
+        const starCount = 25
+        const sizes = ['small', 'medium', 'large']
+
+        for (let i = 0; i < starCount; i++) {
+          const x = Math.random() * 100
+          const y = Math.random() * 100
+          const size = sizes[Math.floor(Math.random() * sizes.length)]
+          const delay = Math.random() * 3
+
+          starsHTML += `
+            <div class="star-dot ${size}" style="
+              left: ${x}%;
+              top: ${y}%;
+              animation-delay: ${delay}s;
+            "></div>
+          `
+        }
+
         portalContainer.innerHTML = `
           <div style="
             text-align: center; 
@@ -269,15 +410,34 @@ function injectGhostGraphic(element: HTMLElement): void {
             width: 100%;
             position: relative;
           ">
-            <div class="portal-vortex" style="
-              font-size: ${portalSize}px; 
-              animation: spin 2s linear infinite;
-              line-height: 1;
-            ">🌀</div>
+            <!-- Twinkling stars background -->
+            ${starsHTML}
+            
+            <!-- Portal vortex layers (using your custom portal image) -->
+            <img class="portal-layer-3" src="${chrome.runtime.getURL('portal.png')}" style="
+              width: ${portalSize * 1.2}px;
+              height: ${portalSize * 1.2}px;
+              opacity: 0.4;
+              filter: brightness(0.7);
+            " />
+            
+            <img class="portal-layer-2" src="${chrome.runtime.getURL('portal.png')}" style="
+              width: ${portalSize}px;
+              height: ${portalSize}px;
+              opacity: 0.6;
+              filter: brightness(0.8);
+            " />
+            
+            <img class="portal-layer-1" src="${chrome.runtime.getURL('portal.png')}" style="
+              width: ${portalSize * 0.8}px;
+              height: ${portalSize * 0.8}px;
+              opacity: 0.85;
+              filter: brightness(0.9);
+            " />
+            
+            <!-- Ghost being captured -->
             <div class="ghost-capture" style="
-              position: absolute; 
               font-size: ${ghostSize}px; 
-              animation: suckIntoPortal 5s ease-in forwards;
               line-height: 1;
             ">👻</div>
           </div>
@@ -288,25 +448,48 @@ function injectGhostGraphic(element: HTMLElement): void {
         element.style.overflow = 'hidden'
         element.appendChild(portalContainer)
         element.setAttribute('data-adbusters-portal', 'true')
+        element.setAttribute('data-adbusters-interactive', 'true')
 
-        // After animation completes, hide the entire element
-        setTimeout(() => {
-          element.style.transition = 'opacity 0.5s ease-out'
-          element.style.opacity = '0'
-          setTimeout(() => {
-            element.style.display = 'none'
-            element.style.height = '0'
-            element.style.width = '0'
-            element.style.margin = '0'
-            element.style.padding = '0'
-          }, 500)
-        }, 5000)
+        // Find the ghost element and add click handler
+        const ghostElement = portalContainer.querySelector('.ghost-capture')
+        if (ghostElement) {
+          ghostElement.addEventListener('click', () => {
+            // Prevent multiple clicks
+            if (ghostElement.classList.contains('capturing')) {
+              return
+            }
+
+            // Start the capture animation
+            ghostElement.classList.add('capturing')
+            console.log('👻 Ghost clicked! Starting capture animation...')
+
+            // Increment counter when ghost is clicked
+            reportAdsDetected(1)
+
+            // After animation completes, hide the entire element
+            setTimeout(() => {
+              element.style.transition = 'opacity 0.5s ease-out'
+              element.style.opacity = '0'
+              setTimeout(() => {
+                element.style.display = 'none'
+                element.style.height = '0'
+                element.style.width = '0'
+                element.style.margin = '0'
+                element.style.padding = '0'
+              }, 500)
+            }, 4000)
+          })
+        }
+
+        // Return false to indicate this ad should NOT be counted yet
+        return false
       } else {
-        // Small elements just hide
+        // Small elements just hide and count immediately
         element.style.display = 'none'
+        return true
       }
     } else {
-      // 80% of the time: just hide the ad completely
+      // 80% of the time: just hide the ad completely and count immediately
       // Remove from layout entirely so page flows naturally
       element.style.display = 'none'
       element.style.visibility = 'hidden'
@@ -316,11 +499,13 @@ function injectGhostGraphic(element: HTMLElement): void {
       element.style.margin = '0'
       element.style.padding = '0'
       element.setAttribute('data-adbusters-hidden', 'true')
+      return true
     }
   } catch (error) {
     console.warn('Failed to process ad element:', error)
-    // Fallback: just hide the element
+    // Fallback: just hide the element and count it
     element.style.display = 'none'
+    return true
   }
 }
 
@@ -345,11 +530,15 @@ function scanForAds(): number {
         return
       }
 
-      // Inject ghost graphic
-      injectGhostGraphic(element)
-      foundAds++
+      // Inject ghost graphic - returns true if should be counted immediately
+      const shouldCount = injectGhostGraphic(element)
 
-      console.log('👻 Ad detected and ghosted:', selector)
+      if (shouldCount) {
+        foundAds++
+        console.log('👻 Ad detected and hidden:', selector)
+      } else {
+        console.log('👻 Interactive ghost created (click to capture):', selector)
+      }
     })
   })
 
