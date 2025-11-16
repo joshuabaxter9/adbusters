@@ -102,6 +102,23 @@ function copyAssets() {
         })
       }
 
+      // Copy portal and monster images from public
+      const publicImages = [
+        'portal.png',
+        'monster1.png',
+        'monster2.png',
+        'monster3.png',
+        'monster4.png',
+        'monster5.png',
+        'monster6.png',
+      ]
+      publicImages.forEach((image) => {
+        const imagePath = `public/${image}`
+        if (existsSync(imagePath)) {
+          copyFileSync(imagePath, `dist/${image}`)
+        }
+      })
+
       console.log('✓ Copied manifest and assets to dist/')
     },
   }

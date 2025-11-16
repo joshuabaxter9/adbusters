@@ -376,6 +376,15 @@ function applyBlockingCSS(): void {
       box-shadow: 0 0 4px rgba(255, 255, 255, 1);
     }
     
+    /* Portal Elements Container */
+    .portal-elements {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
     /* Portal Layers - Simplified */
     .portal-layer-1 {
       position: absolute;
@@ -635,8 +644,10 @@ function injectGhostGraphic(element: HTMLElement, isVideoAd: boolean = false): b
           `
         }
 
+        // Initially show only the monster (no portal)
+        const monsterNum = Math.floor(Math.random() * 6) + 1
         portalContainer.innerHTML = `
-          <div style="
+          <div class="portal-content" style="
             text-align: center; 
             display: flex; 
             align-items: center; 
@@ -647,36 +658,51 @@ function injectGhostGraphic(element: HTMLElement, isVideoAd: boolean = false): b
             border-radius: 12px;
             overflow: hidden;
           ">
-            <!-- Twinkling stars background -->
+            <!-- Twinkling stars background (always visible) -->
             ${starsHTML}
             
-            <!-- Portal vortex layers (using your custom portal image) -->
-            <img class="portal-layer-3" src="${chrome.runtime.getURL('portal.png')}" style="
-              width: ${portalSize * 1.2}px;
-              height: ${portalSize * 1.2}px;
-              opacity: 0.4;
-              filter: brightness(0.7);
-            " />
+            <!-- Portal vortex layers (hidden initially) -->
+            <div class="portal-elements" style="
+              position: absolute;
+              inset: 0;
+              display: none;
+              align-items: center;
+              justify-content: center;
+              opacity: 0;
+              transition: opacity 0.5s ease-in;
+            ">
+              <img class="portal-layer-3" src="${chrome.runtime.getURL('portal.png')}" style="
+                position: absolute;
+                width: ${portalSize * 1.2}px;
+                height: ${portalSize * 1.2}px;
+                opacity: 0.4;
+                filter: brightness(0.7);
+              " />
+              
+              <img class="portal-layer-2" src="${chrome.runtime.getURL('portal.png')}" style="
+                position: absolute;
+                width: ${portalSize}px;
+                height: ${portalSize}px;
+                opacity: 0.6;
+                filter: brightness(0.8);
+              " />
+              
+              <img class="portal-layer-1" src="${chrome.runtime.getURL('portal.png')}" style="
+                position: absolute;
+                width: ${portalSize * 0.8}px;
+                height: ${portalSize * 0.8}px;
+                opacity: 0.85;
+                filter: brightness(0.9);
+              " />
+            </div>
             
-            <img class="portal-layer-2" src="${chrome.runtime.getURL('portal.png')}" style="
-              width: ${portalSize}px;
-              height: ${portalSize}px;
-              opacity: 0.6;
-              filter: brightness(0.8);
+            <!-- Monster (visible initially) -->
+            <img class="ghost-capture" src="${chrome.runtime.getURL(`monster${monsterNum}.png`)}" style="
+              position: absolute;
+              width: ${ghostSize}px; 
+              height: ${ghostSize}px;
+              object-fit: contain;
             " />
-            
-            <img class="portal-layer-1" src="${chrome.runtime.getURL('portal.png')}" style="
-              width: ${portalSize * 0.8}px;
-              height: ${portalSize * 0.8}px;
-              opacity: 0.85;
-              filter: brightness(0.9);
-            " />
-            
-            <!-- Ghost being captured -->
-            <div class="ghost-capture" style="
-              font-size: ${ghostSize}px; 
-              line-height: 1;
-            ">👻</div>
           </div>
         `
 
@@ -705,8 +731,10 @@ function injectGhostGraphic(element: HTMLElement, isVideoAd: boolean = false): b
         element.setAttribute('data-adbusters-portal', 'true')
         element.setAttribute('data-adbusters-interactive', 'true')
 
-        // Find the ghost element and add click handler
-        const ghostElement = portalContainer.querySelector('.ghost-capture')
+        // Find the monster element and add click handler
+        const ghostElement = portalContainer.querySelector('.ghost-capture') as HTMLElement
+        const portalElements = portalContainer.querySelector('.portal-elements') as HTMLElement
+
         if (ghostElement) {
           ghostElement.addEventListener('click', () => {
             // Prevent multiple clicks
@@ -714,11 +742,20 @@ function injectGhostGraphic(element: HTMLElement, isVideoAd: boolean = false): b
               return
             }
 
+            // Show the portal when clicked with fade-in
+            if (portalElements) {
+              portalElements.style.display = 'flex'
+              // Trigger fade-in after a brief delay to ensure display change is applied
+              setTimeout(() => {
+                portalElements.style.opacity = '1'
+              }, 10)
+            }
+
             // Start the capture animation
             ghostElement.classList.add('capturing')
-            console.log('👻 Ghost clicked! Starting capture animation...')
+            console.log('👻 Monster clicked! Portal opening and starting capture...')
 
-            // Increment counter when ghost is clicked
+            // Increment counter when monster is clicked
             reportAdsDetected(1)
 
             // After animation completes, hide the entire element
