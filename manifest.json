@@ -35,7 +35,7 @@
     "rule_resources": [
       {
         "id": "base_rules",
-        "enabled": true,
+        "enabled": false,
         "path": "rules/baseRules.json"
       },
       {

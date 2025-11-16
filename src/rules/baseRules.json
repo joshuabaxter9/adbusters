@@ -7,12 +7,7 @@
     },
     "condition": {
       "urlFilter": "*doubleclick.net*",
-      "resourceTypes": [
-        "script",
-        "image",
-        "sub_frame",
-        "xmlhttprequest"
-      ]
+      "resourceTypes": ["script", "image", "sub_frame", "xmlhttprequest"]
     }
   },
   {
@@ -23,12 +18,7 @@
     },
     "condition": {
       "urlFilter": "*googlesyndication.com*",
-      "resourceTypes": [
-        "script",
-        "image",
-        "sub_frame",
-        "xmlhttprequest"
-      ]
+      "resourceTypes": ["script", "image", "sub_frame", "xmlhttprequest"]
     }
   },
   {
@@ -39,12 +29,7 @@
     },
     "condition": {
       "urlFilter": "*googleadservices.com*",
-      "resourceTypes": [
-        "script",
-        "image",
-        "sub_frame",
-        "xmlhttprequest"
-      ]
+      "resourceTypes": ["script", "image", "sub_frame", "xmlhttprequest"]
     }
   },
   {
@@ -55,12 +40,7 @@
     },
     "condition": {
       "urlFilter": "*adnxs.com*",
-      "resourceTypes": [
-        "script",
-        "image",
-        "sub_frame",
-        "xmlhttprequest"
-      ]
+      "resourceTypes": ["script", "image", "sub_frame", "xmlhttprequest"]
     }
   },
   {
@@ -71,12 +51,7 @@
     },
     "condition": {
       "urlFilter": "*advertising.com*",
-      "resourceTypes": [
-        "script",
-        "image",
-        "sub_frame",
-        "xmlhttprequest"
-      ]
+      "resourceTypes": ["script", "image", "sub_frame", "xmlhttprequest"]
     }
   },
   {
@@ -87,12 +62,7 @@
     },
     "condition": {
       "urlFilter": "*ads.yahoo.com*",
-      "resourceTypes": [
-        "script",
-        "image",
-        "sub_frame",
-        "xmlhttprequest"
-      ]
+      "resourceTypes": ["script", "image", "sub_frame", "xmlhttprequest"]
     }
   },
   {
@@ -103,12 +73,7 @@
     },
     "condition": {
       "urlFilter": "*amazon-adsystem.com*",
-      "resourceTypes": [
-        "script",
-        "image",
-        "sub_frame",
-        "xmlhttprequest"
-      ]
+      "resourceTypes": ["script", "image", "sub_frame", "xmlhttprequest"]
     }
   },
   {
@@ -119,12 +84,7 @@
     },
     "condition": {
       "urlFilter": "*pubmatic.com*",
-      "resourceTypes": [
-        "script",
-        "image",
-        "sub_frame",
-        "xmlhttprequest"
-      ]
+      "resourceTypes": ["script", "image", "sub_frame", "xmlhttprequest"]
     }
   },
   {
@@ -135,12 +95,7 @@
     },
     "condition": {
       "urlFilter": "*criteo.com*",
-      "resourceTypes": [
-        "script",
-        "image",
-        "sub_frame",
-        "xmlhttprequest"
-      ]
+      "resourceTypes": ["script", "image", "sub_frame", "xmlhttprequest"]
     }
   },
   {
@@ -151,12 +106,7 @@
     },
     "condition": {
       "urlFilter": "*taboola.com*",
-      "resourceTypes": [
-        "script",
-        "image",
-        "sub_frame",
-        "xmlhttprequest"
-      ]
+      "resourceTypes": ["script", "image", "sub_frame", "xmlhttprequest"]
     }
   },
   {
@@ -167,12 +117,7 @@
     },
     "condition": {
       "urlFilter": "*outbrain.com*",
-      "resourceTypes": [
-        "script",
-        "image",
-        "sub_frame",
-        "xmlhttprequest"
-      ]
+      "resourceTypes": ["script", "image", "sub_frame", "xmlhttprequest"]
     }
   },
   {
@@ -183,12 +128,7 @@
     },
     "condition": {
       "urlFilter": "*rubiconproject.com*",
-      "resourceTypes": [
-        "script",
-        "image",
-        "sub_frame",
-        "xmlhttprequest"
-      ]
+      "resourceTypes": ["script", "image", "sub_frame", "xmlhttprequest"]
     }
   },
   {
@@ -199,12 +139,7 @@
     },
     "condition": {
       "urlFilter": "*openx.net*",
-      "resourceTypes": [
-        "script",
-        "image",
-        "sub_frame",
-        "xmlhttprequest"
-      ]
+      "resourceTypes": ["script", "image", "sub_frame", "xmlhttprequest"]
     }
   },
   {
@@ -215,12 +150,7 @@
     },
     "condition": {
       "urlFilter": "*adsrvr.org*",
-      "resourceTypes": [
-        "script",
-        "image",
-        "sub_frame",
-        "xmlhttprequest"
-      ]
+      "resourceTypes": ["script", "image", "sub_frame", "xmlhttprequest"]
     }
   },
   {
@@ -231,12 +161,117 @@
     },
     "condition": {
       "urlFilter": "*adservice.google.com*",
-      "resourceTypes": [
-        "script",
-        "image",
-        "sub_frame",
-        "xmlhttprequest"
-      ]
+      "resourceTypes": ["script", "image", "sub_frame", "xmlhttprequest"]
+    }
+  },
+  {
+    "id": 16,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "*imasdk.googleapis.com*",
+      "resourceTypes": ["script", "media", "sub_frame", "xmlhttprequest"]
+    }
+  },
+  {
+    "id": 17,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "*vast*",
+      "resourceTypes": ["media", "sub_frame", "xmlhttprequest"]
+    }
+  },
+  {
+    "id": 18,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "*vpaid*",
+      "resourceTypes": ["media", "sub_frame", "xmlhttprequest"]
+    }
+  },
+  {
+    "id": 19,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "*video-ad*",
+      "resourceTypes": ["media", "sub_frame", "xmlhttprequest"]
+    }
+  },
+  {
+    "id": 20,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "*videoad*",
+      "resourceTypes": ["media", "sub_frame", "xmlhttprequest"]
+    }
+  },
+  {
+    "id": 21,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "*doubleclick.net/gampad*",
+      "resourceTypes": ["script", "media", "sub_frame", "xmlhttprequest"]
+    }
+  },
+  {
+    "id": 22,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "*spotxchange.com*",
+      "resourceTypes": ["script", "media", "sub_frame", "xmlhttprequest"]
+    }
+  },
+  {
+    "id": 23,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "*freewheel.tv*",
+      "resourceTypes": ["script", "media", "sub_frame", "xmlhttprequest"]
+    }
+  },
+  {
+    "id": 24,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "*innovid.com*",
+      "resourceTypes": ["script", "media", "sub_frame", "xmlhttprequest"]
+    }
+  },
+  {
+    "id": 25,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "*tremormedia.com*",
+      "resourceTypes": ["script", "media", "sub_frame", "xmlhttprequest"]
     }
   }
 ]

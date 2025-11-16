@@ -8,45 +8,161 @@ console.log('👻 AdBusters content script loaded on:', window.location.hostname
 // ============================================================================
 
 const AD_SELECTORS = [
-  // Specific ad classes and IDs (more precise)
+  // Specific ad classes and IDs
   '.advertisement',
   '.ad-container',
   '.ad-wrapper',
   '.ad-banner',
   '.ad-slot',
   '.ad-unit',
+  '.ad-block',
+  '.ad-box',
+  '.ad-space',
+  '.ad-frame',
   '#advertisement',
   '#ad-container',
+  '#ad-banner',
 
   // Sponsored content
+  '.sponsored',
   '.sponsored-content',
   '.sponsored-post',
+  '.sponsor',
   '[data-sponsored="true"]',
+  '[data-ad-type]',
+  '[data-advertisement]',
 
-  // Common ad iframes (very specific)
+  // Common ad iframes
   'iframe[src*="doubleclick.net"]',
   'iframe[src*="googlesyndication.com"]',
   'iframe[src*="googleadservices.com"]',
   'iframe[src*="advertising.com"]',
   'iframe[src*="adnxs.com"]',
+  'iframe[src*="ads."]',
+  'iframe[src*="/ads/"]',
+  'iframe[src*="adserver"]',
 
-  // Google AdSense (very specific)
+  // Google AdSense
   'ins.adsbygoogle',
   '.adsbygoogle',
   '[data-ad-slot]',
   '[data-ad-client]',
+  '[data-ad-format]',
 
-  // Taboola, Outbrain (specific)
+  // Taboola, Outbrain
   '.taboola-container',
   '.outbrain-container',
   '[id^="taboola-"]',
   '[id^="outbrain-"]',
+  '.OUTBRAIN',
+  '.taboola',
 
   // Other ad networks
   '[class^="ad_"]',
   '[id^="ad_"]',
   '[class^="ads_"]',
   '[id^="ads_"]',
+  '[class*="_ad_"]',
+  '[class*="_ads_"]',
+  '[id*="_ad_"]',
+  '[id*="_ads_"]',
+
+  // Video ads - General
+  '.video-ad',
+  '.video-ads',
+  '[class*="video-ad"]',
+  '[id*="video-ad"]',
+  '.video-advertisement',
+  '[class*="video-advertisement"]',
+
+  // Video ad containers and overlays
+  '.video-ad-container',
+  '.video-ad-overlay',
+  '.video-ad-wrapper',
+  '[class*="video-ad-overlay"]',
+  '[id*="video-ad-overlay"]',
+
+  // Pre-roll, mid-roll, post-roll video ads
+  '.preroll-ad',
+  '.midroll-ad',
+  '.postroll-ad',
+  '[class*="preroll"]',
+  '[class*="midroll"]',
+  '[class*="postroll"]',
+
+  // Video player ad elements
+  '.vjs-ad',
+  '.ima-ad-container',
+  '.video-js-ad',
+  '[class*="player-ad"]',
+  '[id*="player-ad"]',
+
+  // Common video ad networks
+  'div[id*="vpaid"]',
+  'div[id*="vast"]',
+  '[class*="vpaid"]',
+  '[class*="vast"]',
+
+  // Embedded video ads
+  'iframe[src*="video-ad"]',
+  'iframe[src*="videoad"]',
+  'iframe[src*="vast"]',
+  'iframe[src*="vpaid"]',
+
+  // Specific video ad platforms
+  '.jwplayer-ad',
+  '.jw-ad',
+  '[class*="jwplayer-ad"]',
+  '.brightcove-ad',
+  '[class*="brightcove-ad"]',
+  '.flowplayer-ad',
+  '[class*="flowplayer-ad"]',
+
+  // Banner ads
+  '.banner-ad',
+  '.top-banner',
+  '.bottom-banner',
+  '[class*="banner-ad"]',
+
+  // Sidebar ads
+  '.sidebar-ad',
+  '.right-ad',
+  '.left-ad',
+
+  // Native ads
+  '.native-ad',
+  '[data-native-ad]',
+
+  // Promotional content
+  '.promo',
+  '.promotion',
+  '[class*="promo-"]',
+
+  // YouTube specific (sidebar/overlay ads, companion ads)
+  'ytd-display-ad-renderer',
+  'ytd-promoted-sparkles-web-renderer',
+  'ytd-ad-slot-renderer',
+  'ytd-banner-promo-renderer',
+  'ytd-companion-slot-renderer',
+  '.ytd-display-ad-renderer',
+  '.video-ads',
+  '.ytp-ad-module',
+  '.ytp-ad-overlay-container',
+  '.ytp-ad-overlay-slot',
+  '.ytp-ad-text-overlay',
+  '.ytp-ad-player-overlay',
+  '.ytp-ad-image-overlay',
+  '[class*="masthead-ad"]',
+  '[class*="companion-ad"]',
+  'div#player-ads',
+  'div.ad-showing',
+  'div.ad-interrupting',
+
+  // YouTube companion/display ads
+  '#player-ads',
+  '#masthead-ad',
+  '.ytd-promoted-video-renderer',
+  '.ytd-compact-promoted-video-renderer',
 ]
 
 // ============================================================================
@@ -55,6 +171,7 @@ const AD_SELECTORS = [
 
 let adsDetected = 0
 let soundPlayed = false
+let blockingEnabled = true // Track current blocking state
 
 // ============================================================================
 // CSS Injection
@@ -306,6 +423,67 @@ function isLikelyAd(element: HTMLElement): boolean {
   const className = element.className?.toLowerCase() || ''
   const id = element.id?.toLowerCase() || ''
 
+  // Check for video ad indicators
+  if (element.tagName === 'VIDEO' || element.querySelector('video')) {
+    // Check if it's a video ad
+    const videoAdPatterns = [
+      'ad',
+      'advertisement',
+      'preroll',
+      'midroll',
+      'postroll',
+      'sponsor',
+      'promo',
+    ]
+
+    for (const pattern of videoAdPatterns) {
+      if (className.includes(pattern) || id.includes(pattern)) {
+        console.log('🎬 Video ad detected:', element.tagName, className || id)
+        return true
+      }
+    }
+
+    // Check video src for ad indicators
+    const videoElement =
+      element.tagName === 'VIDEO' ? (element as HTMLVideoElement) : element.querySelector('video')
+    if (videoElement?.src) {
+      const src = videoElement.src.toLowerCase()
+      if (
+        src.includes('ad') ||
+        src.includes('doubleclick') ||
+        src.includes('googlesyndication') ||
+        src.includes('advertising')
+      ) {
+        console.log('🎬 Video ad detected by src:', src)
+        return true
+      }
+    }
+  }
+
+  // Check for iframe video ads
+  if (element.tagName === 'IFRAME') {
+    const iframe = element as HTMLIFrameElement
+    const src = iframe.src?.toLowerCase() || ''
+
+    const videoAdDomains = [
+      'doubleclick.net',
+      'googlesyndication.com',
+      'advertising.com',
+      'adnxs.com',
+      'video-ad',
+      'videoad',
+      'vast',
+      'vpaid',
+    ]
+
+    for (const domain of videoAdDomains) {
+      if (src.includes(domain)) {
+        console.log('🎬 Video ad iframe detected:', src)
+        return true
+      }
+    }
+  }
+
   // Skip if it's likely legitimate content
   const legitimatePatterns = [
     'article',
@@ -549,6 +727,11 @@ function injectGhostGraphic(element: HTMLElement): boolean {
 }
 
 function scanForAds(): number {
+  // Don't scan if blocking is disabled
+  if (!blockingEnabled) {
+    return 0
+  }
+
   let foundAds = 0
 
   AD_SELECTORS.forEach((selector) => {
@@ -581,7 +764,96 @@ function scanForAds(): number {
     })
   })
 
+  // Also scan for video ads specifically
+  foundAds += scanForVideoAds()
+
   return foundAds
+}
+
+// ============================================================================
+// Video Ad Detection
+// ============================================================================
+
+function scanForVideoAds(): number {
+  // Don't scan if blocking is disabled
+  if (!blockingEnabled) {
+    return 0
+  }
+
+  let foundVideoAds = 0
+
+  // Find all video elements
+  const videos = document.querySelectorAll('video')
+  videos.forEach((video) => {
+    const parent = video.parentElement
+    if (!parent) return
+
+    // Skip if already processed
+    if (parent.hasAttribute('data-adbusters-processed')) {
+      return
+    }
+
+    // Check if video is an ad
+    const src = video.src?.toLowerCase() || ''
+    const className = parent.className?.toLowerCase() || ''
+    const id = parent.id?.toLowerCase() || ''
+
+    const isVideoAd =
+      src.includes('ad') ||
+      src.includes('doubleclick') ||
+      src.includes('googlesyndication') ||
+      className.includes('ad') ||
+      className.includes('preroll') ||
+      className.includes('midroll') ||
+      id.includes('ad') ||
+      id.includes('preroll') ||
+      id.includes('midroll')
+
+    if (isVideoAd) {
+      parent.setAttribute('data-adbusters-processed', 'true')
+      const shouldCount = injectGhostGraphic(parent)
+      if (shouldCount) {
+        foundVideoAds++
+        console.log('🎬 Video ad detected and hidden')
+      }
+    }
+  })
+
+  // Find all iframes that might contain video ads
+  const iframes = document.querySelectorAll('iframe')
+  iframes.forEach((iframe) => {
+    const parent = iframe.parentElement
+    if (!parent) return
+
+    // Skip if already processed
+    if (parent.hasAttribute('data-adbusters-processed')) {
+      return
+    }
+
+    const src = iframe.src?.toLowerCase() || ''
+    const videoAdPatterns = [
+      'video-ad',
+      'videoad',
+      'vast',
+      'vpaid',
+      'ima3',
+      'imasdk',
+      'doubleclick.net/gampad',
+    ]
+
+    const isVideoAdIframe = videoAdPatterns.some((pattern) => src.includes(pattern))
+
+    if (isVideoAdIframe) {
+      parent.setAttribute('data-adbusters-processed', 'true')
+      const shouldCount = injectGhostGraphic(parent)
+      if (shouldCount) {
+        foundVideoAds++
+        console.log('🎬 Video ad iframe detected and hidden:', src)
+      }
+    }
+  })
+
+  return foundVideoAds
 }
 
 // ============================================================================
@@ -591,19 +863,96 @@ function scanForAds(): number {
 function initialize(): void {
   console.log('🎃 Initializing AdBusters content script...')
 
-  // Inject CSS
+  // Always inject CSS (for portal animations)
   applyBlockingCSS()
 
-  // Initial scan
-  const initialAds = scanForAds()
+  // Check if blocking is enabled before scanning
+  chrome.runtime.sendMessage({ type: 'GET_STATE' }, (response) => {
+    if (response?.success && response.data) {
+      blockingEnabled = response.data.blockingEnabled
 
-  if (initialAds > 0) {
-    adsDetected += initialAds
-    console.log(`✓ Found ${initialAds} ads on initial scan`)
+      if (!blockingEnabled) {
+        console.log('✓ Ad blocking is disabled - skipping scan')
+        return
+      }
 
-    // Report to service worker
-    reportAdsDetected(initialAds)
+      // Only scan if blocking is enabled
+      const initialAds = scanForAds()
+
+      if (initialAds > 0) {
+        adsDetected += initialAds
+        console.log(`✓ Found ${initialAds} ads on initial scan`)
+
+        // Report to service worker
+        reportAdsDetected(initialAds)
+      }
+    }
+  })
+}
+
+// ============================================================================
+// Listen for State Changes
+// ============================================================================
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'BLOCKING_STATE_CHANGED') {
+    blockingEnabled = message.enabled
+    console.log(`🔄 Blocking state changed: ${blockingEnabled ? 'ON' : 'OFF'}`)
+
+    if (blockingEnabled) {
+      // Re-scan for ads when blocking is enabled
+      const newAds = scanForAds()
+      if (newAds > 0) {
+        adsDetected += newAds
+        console.log(`✓ Found ${newAds} ads after enabling blocking`)
+        reportAdsDetected(newAds)
+      }
+    } else {
+      // When blocking is disabled, restore all hidden ads
+      restoreAds()
+    }
+
+    sendResponse({ success: true })
   }
+  return true
+})
+
+function restoreAds(): void {
+  console.log('🔄 Restoring hidden ads...')
+
+  // Find all elements that were processed by AdBusters
+  const processedElements = document.querySelectorAll('[data-adbusters-processed]')
+
+  processedElements.forEach((element) => {
+    const htmlElement = element as HTMLElement
+
+    // Remove the processed marker so they can be re-processed if blocking is re-enabled
+    htmlElement.removeAttribute('data-adbusters-processed')
+
+    // Restore hidden elements
+    if (htmlElement.hasAttribute('data-adbusters-hidden')) {
+      htmlElement.style.display = ''
+      htmlElement.style.visibility = ''
+      htmlElement.style.opacity = ''
+      htmlElement.style.height = ''
+      htmlElement.style.width = ''
+      htmlElement.style.margin = ''
+      htmlElement.style.padding = ''
+      htmlElement.removeAttribute('data-adbusters-hidden')
+    }
+
+    // Restore portal containers
+    if (htmlElement.hasAttribute('data-adbusters-portal')) {
+      // For portal containers, we need to reload the page to fully restore
+      // For now, just make them visible again
+      htmlElement.style.display = ''
+      htmlElement.style.opacity = '1'
+      htmlElement.removeAttribute('data-adbusters-portal')
+      htmlElement.removeAttribute('data-adbusters-interactive')
+    }
+  })
+
+  console.log('✓ Ads restored')
 }
 
 // ============================================================================

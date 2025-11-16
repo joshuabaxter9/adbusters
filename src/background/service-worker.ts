@@ -100,6 +100,23 @@ async function initializeExtension() {
 
   await saveState(completeState)
 
+  // Enable/disable rules based on state
+  if (completeState.blockingEnabled) {
+    await chrome.declarativeNetRequest.updateEnabledRulesets({
+      enableRulesetIds: ['base_rules'],
+      disableRulesetIds: [],
+    })
+    console.log('✓ Base rules enabled')
+  }
+
+  if (completeState.aggressiveMode && completeState.blockingEnabled) {
+    await chrome.declarativeNetRequest.updateEnabledRulesets({
+      enableRulesetIds: ['aggressive_rules'],
+      disableRulesetIds: [],
+    })
+    console.log('✓ Aggressive rules enabled')
+  }
+
   console.log('✓ State initialized:', completeState)
   console.log(`✓ Blocking: ${completeState.blockingEnabled ? 'ON' : 'OFF'}`)
   console.log(`✓ Ghosts trapped: ${completeState.ghostCount}`)
@@ -145,10 +162,39 @@ async function toggleBlocking(enabled: boolean): Promise<boolean> {
       console.log('✓ Ad blocking disabled')
     }
 
+    // Broadcast state change to all tabs
+    await broadcastStateChange(enabled)
+
     return true
   } catch (error) {
     console.error('Failed to toggle blocking:', error)
     return false
+  }
+}
+
+async function broadcastStateChange(enabled: boolean): Promise<void> {
+  try {
+    // Get all tabs
+    const tabs = await chrome.tabs.query({})
+
+    // Send message to each tab
+    for (const tab of tabs) {
+      if (tab.id) {
+        try {
+          await chrome.tabs.sendMessage(tab.id, {
+            type: 'BLOCKING_STATE_CHANGED',
+            enabled: enabled,
+          })
+        } catch (error) {
+          // Ignore errors for tabs that don't have content script loaded
+          // (like chrome:// pages, extension pages, etc.)
+        }
+      }
+    }
+
+    console.log(`📢 Broadcasted state change to all tabs: ${enabled ? 'ON' : 'OFF'}`)
+  } catch (error) {
+    console.error('Failed to broadcast state change:', error)
   }
 }
 
@@ -331,3 +377,70 @@ chrome.runtime.onMessage.addListener(
 )
 
 console.log('✓ Message handler registered')
+
+// ============================================================================
+// Popup Blocker
+// ============================================================================
+
+// Track recently created tabs to detect popups
+const recentTabs = new Map<number, { url: string; timestamp: number; openerTabId?: number }>()
+
+// Listen for new tabs being created
+chrome.tabs.onCreated.addListener(async (tab) => {
+  if (tab.id && tab.openerTabId) {
+    // This tab was opened by another tab (potential popup)
+    recentTabs.set(tab.id, {
+      url: tab.url || tab.pendingUrl || '',
+      timestamp: Date.now(),
+      openerTabId: tab.openerTabId,
+    })
+
+    // Clean up old entries after 5 seconds
+    setTimeout(() => recentTabs.delete(tab.id!), 5000)
+  }
+})
+
+// Listen for tab updates to check if it's a popup ad
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (!changeInfo.url) return
+
+  const tabInfo = recentTabs.get(tabId)
+  if (!tabInfo) return
+
+  const url = changeInfo.url.toLowerCase()
+
+  // Check if it's likely a popup ad
+  const isPopupAd =
+    // Common ad domains
+    url.includes('doubleclick.net') ||
+    url.includes('googlesyndication.com') ||
+    url.includes('adnxs.com') ||
+    url.includes('advertising.com') ||
+    url.includes('popads.net') ||
+    url.includes('popcash.net') ||
+    url.includes('propellerads.com') ||
+    url.includes('exoclick.com') ||
+    url.includes('juicyads.com') ||
+    url.includes('trafficjunky.com') ||
+    // Suspicious patterns
+    url.includes('/ads/') ||
+    url.includes('ad.') ||
+    url.includes('ads.') ||
+    url.includes('adserver') ||
+    url.includes('banner') ||
+    url.includes('popup') ||
+    url.includes('pop-up')
+
+  if (isPopupAd) {
+    // Close the popup ad tab
+    try {
+      await chrome.tabs.remove(tabId)
+      console.log(`🚫 Blocked popup ad: ${url}`)
+      recentTabs.delete(tabId)
+    } catch (error) {
+      console.warn('Failed to close popup tab:', error)
+    }
+  }
+})
+
+console.log('✓ Popup blocker active')
