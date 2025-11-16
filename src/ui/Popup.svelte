@@ -5,7 +5,6 @@
 
   let blockingEnabled = false
   let ghostCount = 0
-  let aggressiveMode = false
   let pkeLevel = 0
   let loading = true
   let error = ''
@@ -16,7 +15,6 @@
   interface ExtensionState {
     blockingEnabled: boolean
     ghostCount: number
-    aggressiveMode: boolean
     soundEnabled: boolean
     whitelist: string[]
     pkeCapacity?: number
@@ -38,7 +36,6 @@
         const state: ExtensionState = response.data
         blockingEnabled = state.blockingEnabled
         ghostCount = state.ghostCount
-        aggressiveMode = state.aggressiveMode
         pkeCapacity = state.pkeCapacity || 1000
         purgeCount = state.purgeCount || 0
 
@@ -73,31 +70,6 @@
     } catch (err) {
       console.error('Error toggling blocking:', err)
       error = 'Connection error'
-    }
-  }
-
-  async function toggleAggressive() {
-    try {
-      error = ''
-      console.log('Toggling aggressive mode to:', aggressiveMode)
-
-      const response = await chrome.runtime.sendMessage({
-        type: 'TOGGLE_AGGRESSIVE',
-        enabled: aggressiveMode,
-      })
-
-      console.log('Aggressive mode response:', response)
-
-      if (!response?.success) {
-        error = 'Failed to toggle aggressive mode'
-        // Revert checkbox
-        aggressiveMode = !aggressiveMode
-      }
-    } catch (err) {
-      console.error('Error toggling aggressive mode:', err)
-      error = 'Connection error'
-      // Revert checkbox
-      aggressiveMode = !aggressiveMode
     }
   }
 
@@ -239,7 +211,6 @@
           {#if blockingEnabled}
             <span class="button-icon">👻</span>
             <span class="button-text">Trapping Active</span>
-            <div class="button-shimmer"></div>
           {:else}
             <span class="button-icon">▶️</span>
             <span class="button-text">Start Trapping</span>
@@ -282,25 +253,6 @@
         {/if}
       </div>
 
-      <!-- Aggressive Mode Toggle -->
-      <label class="aggressive-toggle">
-        <input type="checkbox" bind:checked={aggressiveMode} on:change={toggleAggressive} />
-        <span class="toggle-label">
-          <span class="toggle-icon">⚡</span>
-          <span class="toggle-text">Cross the Streams</span>
-        </span>
-      </label>
-
-      {#if aggressiveMode}
-        <div class="warning-banner" in:fly={{ y: -10, duration: 300 }}>
-          <span class="warning-icon">⚡</span>
-          <div class="warning-content">
-            <div class="warning-title">DON'T CROSS THE STREAMS!</div>
-            <div class="warning-subtitle">Aggressive blocking active</div>
-          </div>
-        </div>
-      {/if}
-
       <!-- Reset Button -->
       <button class="reset-button" on:click={resetExtension}> 🔄 Reset Extension </button>
 
@@ -327,8 +279,8 @@
   .header {
     background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
     padding: 20px;
-    border-bottom: 2px solid #39ff14;
-    box-shadow: 0 4px 20px rgba(57, 255, 20, 0.2);
+    border-bottom: 2px solid #a855f7;
+    box-shadow: 0 4px 20px rgba(168, 85, 247, 0.3);
   }
 
   .logo {
@@ -341,14 +293,14 @@
 
   .logo-icon {
     font-size: 36px;
-    filter: drop-shadow(0 0 10px #39ff14);
+    filter: drop-shadow(0 0 10px #a855f7);
     animation: float 3s ease-in-out infinite;
   }
 
   .logo-text {
     font-size: 28px;
     font-weight: 900;
-    background: linear-gradient(135deg, #39ff14 0%, #00d9ff 100%);
+    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -370,12 +322,12 @@
 
   /* Stats Card */
   .stats-card {
-    background: rgba(57, 255, 20, 0.05);
-    border: 2px solid #39ff14;
+    background: rgba(168, 85, 247, 0.08);
+    border: 2px solid #a855f7;
     border-radius: 12px;
     padding: 20px;
     margin-bottom: 20px;
-    box-shadow: 0 4px 20px rgba(57, 255, 20, 0.1);
+    box-shadow: 0 4px 20px rgba(168, 85, 247, 0.15);
   }
 
   .stat-item {
@@ -384,7 +336,7 @@
 
   .stat-label {
     font-size: 11px;
-    color: #39ff14;
+    color: #c084fc;
     text-transform: uppercase;
     letter-spacing: 2px;
     margin-bottom: 8px;
@@ -394,8 +346,8 @@
   .stat-value {
     font-size: 48px;
     font-weight: 900;
-    color: #ff6b35;
-    text-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
+    color: #ec4899;
+    text-shadow: 0 0 20px rgba(236, 72, 153, 0.5);
   }
 
   /* Toggle Button */
@@ -425,10 +377,10 @@
   }
 
   .toggle-button.active {
-    background: #39ff14;
-    border-color: #39ff14;
-    color: #0d0d0d;
-    box-shadow: 0 6px 30px rgba(57, 255, 20, 0.4);
+    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+    border-color: #a855f7;
+    color: #ffffff;
+    box-shadow: 0 6px 30px rgba(168, 85, 247, 0.5);
     animation: pulse 2s ease-in-out infinite;
   }
 
@@ -443,13 +395,6 @@
 
   .button-icon {
     font-size: 24px;
-  }
-
-  .button-shimmer {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(0, 217, 255, 0.3), transparent);
-    animation: shimmer 2s linear infinite;
   }
 
   /* PKE Section */
@@ -470,7 +415,7 @@
 
   .pke-label {
     font-size: 10px;
-    color: #00d9ff;
+    color: #a855f7;
     font-weight: 700;
     letter-spacing: 2px;
     font-family: 'Courier New', monospace;
@@ -478,7 +423,7 @@
 
   .pke-value {
     font-size: 14px;
-    color: #00d9ff;
+    color: #c084fc;
     font-weight: 700;
     font-family: 'Courier New', monospace;
   }
@@ -520,9 +465,9 @@
 
   .pke-meter-fill {
     height: 100%;
-    background: linear-gradient(90deg, #39ff14, #00d9ff);
+    background: linear-gradient(90deg, #a855f7, #ec4899);
     transition: width 0.5s ease-out;
-    box-shadow: 0 0 10px rgba(57, 255, 20, 0.6);
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.6);
     position: relative;
     border-radius: 4px;
   }
@@ -607,77 +552,6 @@
     transform: translateY(0);
   }
 
-  /* Aggressive Toggle */
-  .aggressive-toggle {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px;
-    background: rgba(0, 217, 255, 0.05);
-    border: 2px solid #00d9ff;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin-bottom: 12px;
-  }
-
-  .aggressive-toggle:hover {
-    background: rgba(0, 217, 255, 0.1);
-    transform: translateX(4px);
-  }
-
-  .aggressive-toggle input {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-  }
-
-  .toggle-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: 1;
-  }
-
-  .toggle-icon {
-    font-size: 20px;
-  }
-
-  .toggle-text {
-    font-size: 14px;
-    font-weight: 700;
-    color: #00d9ff;
-  }
-
-  /* Warning Banner */
-  .warning-banner {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px;
-    background: rgba(255, 107, 53, 0.1);
-    border: 2px solid #ff6b35;
-    border-radius: 10px;
-    margin-bottom: 12px;
-    animation: pulse 2s ease-in-out infinite;
-  }
-
-  .warning-icon {
-    font-size: 24px;
-  }
-
-  .warning-title {
-    font-size: 12px;
-    font-weight: 700;
-    color: #ff6b35;
-  }
-
-  .warning-subtitle {
-    font-size: 10px;
-    color: #ff6b35;
-    opacity: 0.8;
-  }
-
   /* Loading Screen */
   .loading-screen {
     padding: 60px 20px;
@@ -686,13 +560,13 @@
 
   .loading-ghost {
     font-size: 72px;
-    filter: drop-shadow(0 0 30px #39ff14);
+    filter: drop-shadow(0 0 30px #a855f7);
     animation: bounce 1s ease-in-out infinite;
   }
 
   .loading-text {
     font-size: 18px;
-    color: #00d9ff;
+    color: #c084fc;
     margin-top: 20px;
     animation: pulse 1.5s ease-in-out infinite;
   }

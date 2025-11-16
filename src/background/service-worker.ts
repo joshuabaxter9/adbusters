@@ -271,7 +271,7 @@ async function updateBadge(count: number): Promise<void> {
   try {
     if (count > 0) {
       await chrome.action.setBadgeText({ text: count.toString() })
-      await chrome.action.setBadgeBackgroundColor({ color: '#39FF14' }) // neon green
+      await chrome.action.setBadgeBackgroundColor({ color: '#a855f7' }) // purple
     } else {
       await chrome.action.setBadgeText({ text: '' })
     }
