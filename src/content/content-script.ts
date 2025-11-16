@@ -3,6 +3,39 @@
 
 console.log('👻 AdBusters content script loaded on:', window.location.hostname)
 
+// Check if we're on YouTube
+const isYouTube = window.location.hostname.includes('youtube.com')
+
+// ============================================================================
+// Anti-Detection Measures for YouTube
+// ============================================================================
+
+if (isYouTube) {
+  // Prevent YouTube from detecting ad blocker by hiding extension artifacts
+
+  // Remove telltale signs of ad blocking
+  const hideAdBlockerSignals = () => {
+    try {
+      // Hide our custom attributes from YouTube's detection
+      const processedElements = document.querySelectorAll('[data-adbusters-processed]')
+      processedElements.forEach((el) => {
+        // Keep the attribute but make it invisible to YouTube's detection
+        const value = el.getAttribute('data-adbusters-processed')
+        el.removeAttribute('data-adbusters-processed')
+        ;(el as any).__adbusters_processed = value // Store in JS property instead
+      })
+    } catch (e) {
+      // Silently fail
+    }
+  }
+
+  // Run cleanup periodically to hide extension artifacts
+  setInterval(hideAdBlockerSignals, 1000)
+
+  // Note: Inline script injection removed due to CSP restrictions
+  // YouTube's CSP blocks inline scripts, so we rely on DOM manipulation instead
+}
+
 // ============================================================================
 // Ad Detection Selectors
 // ============================================================================
@@ -138,31 +171,22 @@ const AD_SELECTORS = [
   '.promotion',
   '[class*="promo-"]',
 
-  // YouTube specific (sidebar/overlay ads, companion ads)
+  // YouTube specific (ONLY sidebar/display ads, NOT video player ads)
   'ytd-display-ad-renderer',
   'ytd-promoted-sparkles-web-renderer',
-  'ytd-ad-slot-renderer',
   'ytd-banner-promo-renderer',
-  'ytd-companion-slot-renderer',
   '.ytd-display-ad-renderer',
-  '.video-ads',
-  '.ytp-ad-module',
-  '.ytp-ad-overlay-container',
-  '.ytp-ad-overlay-slot',
-  '.ytp-ad-text-overlay',
-  '.ytp-ad-player-overlay',
-  '.ytp-ad-image-overlay',
   '[class*="masthead-ad"]',
-  '[class*="companion-ad"]',
-  'div#player-ads',
-  'div.ad-showing',
-  'div.ad-interrupting',
-
-  // YouTube companion/display ads
-  '#player-ads',
   '#masthead-ad',
   '.ytd-promoted-video-renderer',
   '.ytd-compact-promoted-video-renderer',
+
+  // NOTE: We do NOT block these YouTube elements as they break video playback:
+  // - .ytp-ad-module (video ad overlay)
+  // - .ytp-ad-overlay-container (ad overlay)
+  // - .ad-showing, .ad-interrupting (ad state indicators)
+  // - #player-ads (video player ad container)
+  // These are handled by the YouTube ad skipper instead
 ]
 
 // ============================================================================
@@ -536,8 +560,22 @@ function createGhostSVG(): string {
   `
 }
 
-function injectGhostGraphic(element: HTMLElement): boolean {
+function injectGhostGraphic(element: HTMLElement, isVideoAd: boolean = false): boolean {
   try {
+    // For video ads, always just hide them without ghost portal
+    if (isVideoAd) {
+      element.style.display = 'none'
+      element.style.visibility = 'hidden'
+      element.style.opacity = '0'
+      element.style.height = '0'
+      element.style.width = '0'
+      element.style.margin = '0'
+      element.style.padding = '0'
+      element.setAttribute('data-adbusters-hidden', 'true')
+      element.setAttribute('data-adbusters-video-ad', 'true')
+      return true
+    }
+
     // 50% chance to show interactive ghost, 50% just hide
     const showInteractiveGhost = Math.random() < 0.5
 
@@ -752,12 +790,29 @@ function scanForAds(): number {
         return
       }
 
-      // Inject ghost graphic - returns true if should be counted immediately
-      const shouldCount = injectGhostGraphic(element)
+      // Check if this is a video ad element
+      const isVideoAdElement =
+        element.tagName === 'VIDEO' ||
+        element.querySelector('video') !== null ||
+        (element.tagName === 'IFRAME' &&
+          (element as HTMLIFrameElement).src?.toLowerCase().includes('video'))
+
+      // IMPORTANT: Don't block YouTube's main video player
+      if (isYouTube && element.querySelector('video.html5-main-video')) {
+        console.log('⚠️ Skipping YouTube main video player')
+        return
+      }
+
+      // Inject ghost graphic - pass true if it's a video ad
+      const shouldCount = injectGhostGraphic(element, isVideoAdElement)
 
       if (shouldCount) {
         foundAds++
-        console.log('👻 Ad detected and hidden:', selector)
+        if (isVideoAdElement) {
+          console.log('🎬 Video ad detected and hidden (no portal):', selector)
+        } else {
+          console.log('👻 Ad detected and hidden:', selector)
+        }
       } else {
         console.log('👻 Interactive ghost created (click to capture):', selector)
       }
@@ -793,6 +848,11 @@ function scanForVideoAds(): number {
       return
     }
 
+    // IMPORTANT: Skip YouTube's main video player - we handle YouTube ads differently
+    if (isYouTube && video.classList.contains('html5-main-video')) {
+      return
+    }
+
     // Check if video is an ad
     const src = video.src?.toLowerCase() || ''
     const className = parent.className?.toLowerCase() || ''
@@ -811,10 +871,10 @@ function scanForVideoAds(): number {
 
     if (isVideoAd) {
       parent.setAttribute('data-adbusters-processed', 'true')
-      const shouldCount = injectGhostGraphic(parent)
+      const shouldCount = injectGhostGraphic(parent, true) // Pass true for video ads
       if (shouldCount) {
         foundVideoAds++
-        console.log('🎬 Video ad detected and hidden')
+        console.log('🎬 Video ad detected and hidden (no portal)')
       }
     }
   })
@@ -845,10 +905,10 @@ function scanForVideoAds(): number {
 
     if (isVideoAdIframe) {
       parent.setAttribute('data-adbusters-processed', 'true')
-      const shouldCount = injectGhostGraphic(parent)
+      const shouldCount = injectGhostGraphic(parent, true) // Pass true for video ads
       if (shouldCount) {
         foundVideoAds++
-        console.log('🎬 Video ad iframe detected and hidden:', src)
+        console.log('🎬 Video ad iframe detected and hidden (no portal):', src)
       }
     }
   })
@@ -1005,6 +1065,104 @@ setTimeout(() => {
     reportAdsDetected(lateAds)
   }
 }, 2000)
+
+// ============================================================================
+// YouTube Ad Skipping
+// ============================================================================
+
+let lastAdSkipTime = 0
+let adSkipCount = 0
+let lastAdDuration = 0
+
+function skipYouTubeAd(): void {
+  if (!isYouTube || !blockingEnabled) return
+
+  try {
+    // Find the video player
+    const video = document.querySelector('video.html5-main-video') as HTMLVideoElement
+    if (!video) return
+
+    // Check if an ad is playing using multiple indicators
+    const adContainer = document.querySelector('.ad-showing, .ad-interrupting')
+    const adModule = document.querySelector('.ytp-ad-module')
+    const adPlayerOverlay = document.querySelector('.ytp-ad-player-overlay')
+    const playerAds = document.querySelector('#player-ads')
+
+    // Also check for ad preview text
+    const adPreview = document.querySelector('.ytp-ad-preview-text')
+
+    const isAdPlaying = adContainer || adModule || adPlayerOverlay || playerAds || adPreview
+
+    if (isAdPlaying) {
+      const now = Date.now()
+      const currentDuration = video.duration
+
+      // Check if this is a new ad (different duration or enough time has passed)
+      const isNewAd = currentDuration !== lastAdDuration || now - lastAdSkipTime > 5000
+
+      if (isNewAd) {
+        lastAdDuration = currentDuration
+
+        // Try to click the skip button first (most natural method)
+        const skipButton = document.querySelector(
+          '.ytp-ad-skip-button, .ytp-skip-ad-button, .ytp-ad-skip-button-modern, .ytp-ad-skip-button-container button, button.ytp-ad-skip-button-modern'
+        ) as HTMLElement
+
+        if (skipButton && skipButton.offsetParent !== null) {
+          skipButton.click()
+          lastAdSkipTime = now
+          reportAdsDetected(1)
+          adSkipCount++
+          return
+        }
+
+        // If skip button not available, fast-forward through the ad
+        if (video && video.duration && !isNaN(video.duration) && video.duration > 0) {
+          // Jump to the end
+          video.currentTime = video.duration
+          lastAdSkipTime = now
+          reportAdsDetected(1)
+          adSkipCount++
+          return
+        }
+
+        // Try increasing playback speed to skip faster
+        if (video && video.playbackRate < 16) {
+          video.playbackRate = 16
+        }
+      }
+
+      // Always mute ads
+      if (video && !video.muted) {
+        video.muted = true
+        video.volume = 0
+      }
+    } else {
+      // No ad playing, reset
+      lastAdDuration = 0
+
+      // Restore normal playback
+      if (video && video.playbackRate !== 1) {
+        video.playbackRate = 1
+      }
+
+      // Don't unmute automatically - let user control volume
+    }
+  } catch (error) {
+    // Silently fail - YouTube's DOM structure changes frequently
+  }
+}
+
+// Run YouTube ad skipper if on YouTube
+if (isYouTube) {
+  // Start checking immediately and frequently
+  skipYouTubeAd() // Run once immediately
+  setInterval(skipYouTubeAd, 100) // Check every 100ms for fast response
+
+  // Also check when video state changes
+  document.addEventListener('yt-navigate-finish', skipYouTubeAd)
+  document.addEventListener('yt-page-data-updated', skipYouTubeAd)
+}
 
 // ============================================================================
 // DOM Observation for Dynamic Content
