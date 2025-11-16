@@ -134,6 +134,32 @@
     }
   }
 
+  async function resetExtension() {
+    try {
+      error = ''
+
+      // Reset to initial values
+      const response = await chrome.runtime.sendMessage({
+        type: 'PURGE_GHOSTS',
+        capacity: 1000,
+        purgeCount: 0,
+      })
+
+      if (response?.success) {
+        pkeCapacity = 1000
+        purgeCount = 0
+        ghostCount = 0
+        pkeLevel = 0
+        console.log('Extension reset to initial state')
+      } else {
+        error = 'Failed to reset'
+      }
+    } catch (err) {
+      console.error('Error resetting:', err)
+      error = 'Connection error'
+    }
+  }
+
   async function toggleWhitelist() {
     try {
       error = ''
@@ -274,6 +300,9 @@
           </div>
         </div>
       {/if}
+
+      <!-- Reset Button -->
+      <button class="reset-button" on:click={resetExtension}> 🔄 Reset Extension </button>
 
       {#if error}
         <div class="error-banner" in:fade>
@@ -550,6 +579,31 @@
   }
 
   .purge-button:active {
+    transform: translateY(0);
+  }
+
+  /* Reset Button */
+  .reset-button {
+    width: 100%;
+    padding: 10px;
+    background: rgba(255, 107, 53, 0.1);
+    border: 2px solid #ff6b35;
+    border-radius: 8px;
+    color: #ff6b35;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 12px;
+  }
+
+  .reset-button:hover {
+    background: rgba(255, 107, 53, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+  }
+
+  .reset-button:active {
     transform: translateY(0);
   }
 
