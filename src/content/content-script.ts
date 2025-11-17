@@ -3,37 +3,13 @@
 
 console.log('👻 AdBusters content script loaded on:', window.location.hostname)
 
-// Check if we're on YouTube
+// Check if we're on YouTube - if so, exit immediately
 const isYouTube = window.location.hostname.includes('youtube.com')
 
-// ============================================================================
-// Anti-Detection Measures for YouTube
-// ============================================================================
-
 if (isYouTube) {
-  // Prevent YouTube from detecting ad blocker by hiding extension artifacts
-
-  // Remove telltale signs of ad blocking
-  const hideAdBlockerSignals = () => {
-    try {
-      // Hide our custom attributes from YouTube's detection
-      const processedElements = document.querySelectorAll('[data-adbusters-processed]')
-      processedElements.forEach((el) => {
-        // Keep the attribute but make it invisible to YouTube's detection
-        const value = el.getAttribute('data-adbusters-processed')
-        el.removeAttribute('data-adbusters-processed')
-        ;(el as any).__adbusters_processed = value // Store in JS property instead
-      })
-    } catch (e) {
-      // Silently fail
-    }
-  }
-
-  // Run cleanup periodically to hide extension artifacts
-  setInterval(hideAdBlockerSignals, 1000)
-
-  // Note: Inline script injection removed due to CSP restrictions
-  // YouTube's CSP blocks inline scripts, so we rely on DOM manipulation instead
+  console.log('⏭️ AdBusters disabled on YouTube - skipping all functionality')
+  // Exit the script completely - no ad blocking on YouTube
+  throw new Error('AdBusters intentionally disabled on YouTube')
 }
 
 // ============================================================================
@@ -170,23 +146,6 @@ const AD_SELECTORS = [
   '.promo',
   '.promotion',
   '[class*="promo-"]',
-
-  // YouTube specific (ONLY sidebar/display ads, NOT video player ads)
-  'ytd-display-ad-renderer',
-  'ytd-promoted-sparkles-web-renderer',
-  'ytd-banner-promo-renderer',
-  '.ytd-display-ad-renderer',
-  '[class*="masthead-ad"]',
-  '#masthead-ad',
-  '.ytd-promoted-video-renderer',
-  '.ytd-compact-promoted-video-renderer',
-
-  // NOTE: We do NOT block these YouTube elements as they break video playback:
-  // - .ytp-ad-module (video ad overlay)
-  // - .ytp-ad-overlay-container (ad overlay)
-  // - .ad-showing, .ad-interrupting (ad state indicators)
-  // - #player-ads (video player ad container)
-  // These are handled by the YouTube ad skipper instead
 ]
 
 // ============================================================================
@@ -834,12 +793,6 @@ function scanForAds(): number {
         (element.tagName === 'IFRAME' &&
           (element as HTMLIFrameElement).src?.toLowerCase().includes('video'))
 
-      // IMPORTANT: Don't block YouTube's main video player
-      if (isYouTube && element.querySelector('video.html5-main-video')) {
-        console.log('⚠️ Skipping YouTube main video player')
-        return
-      }
-
       // Inject ghost graphic - pass true if it's a video ad
       const shouldCount = injectGhostGraphic(element, isVideoAdElement)
 
@@ -882,11 +835,6 @@ function scanForVideoAds(): number {
 
     // Skip if already processed
     if (parent.hasAttribute('data-adbusters-processed')) {
-      return
-    }
-
-    // IMPORTANT: Skip YouTube's main video player - we handle YouTube ads differently
-    if (isYouTube && video.classList.contains('html5-main-video')) {
       return
     }
 
@@ -1102,104 +1050,6 @@ setTimeout(() => {
     reportAdsDetected(lateAds)
   }
 }, 2000)
-
-// ============================================================================
-// YouTube Ad Skipping
-// ============================================================================
-
-let lastAdSkipTime = 0
-let adSkipCount = 0
-let lastAdDuration = 0
-
-function skipYouTubeAd(): void {
-  if (!isYouTube || !blockingEnabled) return
-
-  try {
-    // Find the video player
-    const video = document.querySelector('video.html5-main-video') as HTMLVideoElement
-    if (!video) return
-
-    // Check if an ad is playing using multiple indicators
-    const adContainer = document.querySelector('.ad-showing, .ad-interrupting')
-    const adModule = document.querySelector('.ytp-ad-module')
-    const adPlayerOverlay = document.querySelector('.ytp-ad-player-overlay')
-    const playerAds = document.querySelector('#player-ads')
-
-    // Also check for ad preview text
-    const adPreview = document.querySelector('.ytp-ad-preview-text')
-
-    const isAdPlaying = adContainer || adModule || adPlayerOverlay || playerAds || adPreview
-
-    if (isAdPlaying) {
-      const now = Date.now()
-      const currentDuration = video.duration
-
-      // Check if this is a new ad (different duration or enough time has passed)
-      const isNewAd = currentDuration !== lastAdDuration || now - lastAdSkipTime > 5000
-
-      if (isNewAd) {
-        lastAdDuration = currentDuration
-
-        // Try to click the skip button first (most natural method)
-        const skipButton = document.querySelector(
-          '.ytp-ad-skip-button, .ytp-skip-ad-button, .ytp-ad-skip-button-modern, .ytp-ad-skip-button-container button, button.ytp-ad-skip-button-modern'
-        ) as HTMLElement
-
-        if (skipButton && skipButton.offsetParent !== null) {
-          skipButton.click()
-          lastAdSkipTime = now
-          reportAdsDetected(1)
-          adSkipCount++
-          return
-        }
-
-        // If skip button not available, fast-forward through the ad
-        if (video && video.duration && !isNaN(video.duration) && video.duration > 0) {
-          // Jump to the end
-          video.currentTime = video.duration
-          lastAdSkipTime = now
-          reportAdsDetected(1)
-          adSkipCount++
-          return
-        }
-
-        // Try increasing playback speed to skip faster
-        if (video && video.playbackRate < 16) {
-          video.playbackRate = 16
-        }
-      }
-
-      // Always mute ads
-      if (video && !video.muted) {
-        video.muted = true
-        video.volume = 0
-      }
-    } else {
-      // No ad playing, reset
-      lastAdDuration = 0
-
-      // Restore normal playback
-      if (video && video.playbackRate !== 1) {
-        video.playbackRate = 1
-      }
-
-      // Don't unmute automatically - let user control volume
-    }
-  } catch (error) {
-    // Silently fail - YouTube's DOM structure changes frequently
-  }
-}
-
-// Run YouTube ad skipper if on YouTube
-if (isYouTube) {
-  // Start checking immediately and frequently
-  skipYouTubeAd() // Run once immediately
-  setInterval(skipYouTubeAd, 100) // Check every 100ms for fast response
-
-  // Also check when video state changes
-  document.addEventListener('yt-navigate-finish', skipYouTubeAd)
-  document.addEventListener('yt-page-data-updated', skipYouTubeAd)
-}
 
 // ============================================================================
 // DOM Observation for Dynamic Content
