@@ -60,15 +60,6 @@ adbusters/
 - Tailwind CSS
 - Chrome Manifest V3 APIs
 
-## Features
-
-- 👻 Block ads with declarativeNetRequest
-- 🎃 Halloween-themed UI
-- 📊 Ghost counter (blocked ads)
-- ⚡ "Cross the Streams" aggressive mode
-- 🔇 Sound effects toggle
-- ✅ Domain whitelist
-
 ## Hackathon Demo
 
 Who ya gonna call... when ads come back from the dead? 🚫👻
