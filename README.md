@@ -2,6 +2,26 @@
 
 A Halloween-themed Chrome extension ad blocker that captures ads as ghosts!
 
+## Installation
+
+### From Chrome Web Store
+
+[Coming soon - under review]
+
+### Manual Installation (Developer Mode)
+
+1. Download the latest release from [Releases](https://github.com/joshuabaxter9/adbusters/releases)
+2. Unzip the downloaded file
+3. Open Chrome and navigate to `chrome://extensions/`
+4. Enable "Developer mode" in the top right
+5. Click "Load unpacked"
+6. Select the unzipped folder
+7. The extension is now installed!
+
+## Usage
+
+Click the AdBusters icon in your toolbar to see blocked ads and toggle blocking on/off.
+
 ## Setup
 
 1. Install dependencies:
